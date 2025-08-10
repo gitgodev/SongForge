@@ -2,6 +2,68 @@
 // LYRICS MANAGEMENT FOR SONGFORGE
 // =========================================
 
+// Add this function at the top of js/lyrics.js
+function ensureProjectExists() {
+    if (!window.SongForge) {
+        window.SongForge = {};
+    }
+    
+    if (!window.SongForge.currentProject) {
+        window.SongForge.currentProject = {
+            id: Date.now().toString(36),
+            lyrics: [],
+            workflow: [],
+            release: [],
+            recordings: [],
+            title: '',
+            artist: '',
+            genre: '',
+            bpm: '',
+            key: '',
+            notes: '',
+            beatFile: null,
+            artwork: null,
+            releaseDate: '',
+            createdDate: new Date().toLocaleDateString(),
+            modifiedDate: new Date().toLocaleDateString(),
+            version: '1.0'
+        };
+    }
+    
+    if (!window.SongForge.currentProject.lyrics) {
+        window.SongForge.currentProject.lyrics = [];
+    }
+    
+    if (!window.SongForge.lyrics) {
+        window.SongForge.lyrics = {
+            sections: [],
+            currentSection: null,
+            aiAssistantActive: false,
+            draggedSection: null,
+            autoSave: true,
+            wordCount: 0,
+            rhymeCache: new Map(),
+            synonymCache: new Map()
+        };
+    }
+}
+
+// Update the renderLyricsSections function
+function renderLyricsSections() {
+    ensureProjectExists(); // Add this line
+    
+    const container = document.getElementById('lyricsSections');
+    if (!container) return;
+    
+    // Rest of your existing code...
+}
+
+// Update other functions that access currentProject.lyrics
+function loadDefaultLyricsSections() {
+    ensureProjectExists(); // Add this line
+}
+
+
 // Lyrics system state
 window.SongForge.lyrics = {
     sections: [],
