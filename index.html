@@ -434,12 +434,126 @@
     <script src="js/lyrics.js"></script>
     <script src="js/app.js"></script>
     
-    <script>
-        // Initialize the app
-        document.addEventListener('DOMContentLoaded', function() {
-            lucide.createIcons();
-            initializeApp();
-        });
-    </script>
+  <script>
+    // Safe initialization to prevent null errors
+    function safeInitialize() {
+        console.log('Starting SongForge...');
+        
+        // Ensure SongForge object exists
+        if (!window.SongForge) {
+            window.SongForge = {};
+        }
+        
+        // Initialize icons first
+        lucide.createIcons();
+        
+        // Initialize project structure
+        if (!window.SongForge.currentProject) {
+            window.SongForge.currentProject = {
+                id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                title: '',
+                artist: '',
+                genre: '',
+                bpm: '',
+                key: '',
+                notes: '',
+                lyrics: [],
+                workflow: [],
+                release: [],
+                recordings: [],
+                beatFile: null,
+                artwork: null,
+                releaseDate: '',
+                createdDate: new Date().toLocaleDateString(),
+                modifiedDate: new Date().toLocaleDateString(),
+                version: '1.0'
+            };
+        }
+        
+        // Initialize audio state
+        if (!window.SongForge.audio) {
+            window.SongForge.audio = {
+                beatAudio: null,
+                vocalAudio: null,
+                isRecording: false,
+                isPaused: false,
+                isPlaying: false,
+                currentTime: 0,
+                duration: 0,
+                beatVolume: 0.7,
+                vocalVolume: 0.8,
+                beatMuted: false,
+                vocalMuted: false,
+                beatSolo: false,
+                vocalSolo: false,
+                recordings: [],
+                activeRecording: null,
+                analyser: null,
+                dataArray: null
+            };
+        }
+        
+        // Initialize lyrics state
+        if (!window.SongForge.lyrics) {
+            window.SongForge.lyrics = {
+                sections: [],
+                currentSection: null,
+                aiAssistantActive: false,
+                draggedSection: null,
+                autoSave: true,
+                wordCount: 0,
+                rhymeCache: new Map(),
+                synonymCache: new Map()
+            };
+        }
+        
+        // Initialize app state
+        if (!window.SongForge.app) {
+            window.SongForge.app = {
+                currentTab: 'workflow',
+                initialized: false,
+                autoSaveInterval: null,
+                projectModified: false,
+                lastSaveTime: null
+            };
+        }
+        
+        // Call initialization functions safely
+        setTimeout(() => {
+            try {
+                if (typeof initializeApp === 'function') {
+                    initializeApp();
+                }
+            } catch (error) {
+                console.error('App initialization error:', error);
+            }
+            
+            try {
+                if (typeof initializeLyrics === 'function') {
+                    initializeLyrics();
+                }
+            } catch (error) {
+                console.error('Lyrics initialization error:', error);
+            }
+            
+            try {
+                if (typeof initializeAudio === 'function') {
+                    initializeAudio();
+                }
+            } catch (error) {
+                console.error('Audio initialization error:', error);
+            }
+            
+            console.log('SongForge initialization complete!');
+        }, 100);
+    }
+    
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', safeInitialize);
+    } else {
+        safeInitialize();
+    }
+</script>
 </body>
 </html>
