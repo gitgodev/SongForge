@@ -1,0 +1,25 @@
+{
+  "name": "SongForge",
+  "short_name": "SongForge",
+  "description": "Ultimate web app for artists to document, manage, and track every step of their music creation process",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#181818",
+  "dev_tag": "qwik", 
+  "theme_color": "#5D5CDE",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icons/icon-512.png", 
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["music", "productivity", "entertainment"],
+  "lang": "en",
+  "scope": "/"
+}
