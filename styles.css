@@ -1,0 +1,231 @@
+/* Base Styles and Utilities */
+.gradient-bg {
+    background: linear-gradient(135deg, #5D5CDE 0%, #8B7CF6 100%);
+}
+
+.glass-effect {
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-effect {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #5D5CDE transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #5D5CDE;
+    border-radius: 3px;
+}
+
+/* Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+.recording {
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Dark Mode Transitions */
+* {
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Focus States */
+button:focus,
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: #5D5CDE;
+    ring-opacity: 0.5;
+}
+
+/* Hover Effects */
+.hover-scale:hover {
+    transform: scale(1.02);
+    transition: transform 0.2s ease;
+}
+
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(93, 92, 222, 0.3);
+    transition: box-shadow 0.3s ease;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .mobile-full {
+        width: 100%;
+    }
+    
+    .mobile-text-sm {
+        font-size: 0.875rem;
+    }
+    
+    .mobile-p-2 {
+        padding: 0.5rem;
+    }
+}
+
+/* Loading States */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+}
+
+.dark .loading-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.spinner {
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #5D5CDE;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Audio Visualizer */
+.audio-visualizer {
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    height: 40px;
+    gap: 2px;
+}
+
+.audio-bar {
+    width: 3px;
+    background: #5D5CDE;
+    border-radius: 1px;
+    animation: audioWave 1.5s ease-in-out infinite;
+}
+
+.audio-bar:nth-child(1) { animation-delay: 0.1s; }
+.audio-bar:nth-child(2) { animation-delay: 0.2s; }
+.audio-bar:nth-child(3) { animation-delay: 0.3s; }
+.audio-bar:nth-child(4) { animation-delay: 0.4s; }
+.audio-bar:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes audioWave {
+    0%, 100% { height: 5px; }
+    50% { height: 25px; }
+}
+
+/* Progress Indicators */
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 0.35s;
+    transform-origin: 50% 50%;
+}
+
+/* Custom Radio/Checkbox Styles */
+.custom-radio {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #5D5CDE;
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+}
+
+.custom-radio:checked::after {
+    content: '';
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: #5D5CDE;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.custom-checkbox {
+    appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid #5D5CDE;
+    border-radius: 0.25rem;
+    position: relative;
+    cursor: pointer;
+}
+
+.custom-checkbox:checked {
+    background: #5D5CDE;
+}
+
+.custom-checkbox:checked::after {
+    content: '✓';
+    color: white;
+    font-size: 0.75rem;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
