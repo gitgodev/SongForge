@@ -1,188 +1,391 @@
 // =========================================
-// LYRICS MANAGEMENT FOR SONGFORGE
+// ENHANCED LYRICS SYSTEM FOR SONGFORGE
 // =========================================
 
-// Add this function at the top of js/lyrics.js
-function ensureProjectExists() {
-    if (!window.SongForge) {
-        window.SongForge = {};
-    }
-    
-    if (!window.SongForge.currentProject) {
-        window.SongForge.currentProject = {
-            id: Date.now().toString(36),
-            lyrics: [],
-            workflow: [],
-            release: [],
-            recordings: [],
-            title: '',
-            artist: '',
-            genre: '',
-            bpm: '',
-            key: '',
-            notes: '',
-            beatFile: null,
-            artwork: null,
-            releaseDate: '',
-            createdDate: new Date().toLocaleDateString(),
-            modifiedDate: new Date().toLocaleDateString(),
-            version: '1.0'
-        };
-    }
-    
-    if (!window.SongForge.currentProject.lyrics) {
-        window.SongForge.currentProject.lyrics = [];
-    }
-    
-    if (!window.SongForge.lyrics) {
-        window.SongForge.lyrics = {
-            sections: [],
-            currentSection: null,
-            aiAssistantActive: false,
-            draggedSection: null,
-            autoSave: true,
-            wordCount: 0,
-            rhymeCache: new Map(),
-            synonymCache: new Map()
-        };
-    }
-}
-
-// Update the renderLyricsSections function
-function renderLyricsSections() {
-    ensureProjectExists(); // Add this line
-    
-    const container = document.getElementById('lyricsSections');
-    if (!container) return;
-    
-    // Rest of your existing code...
-}
-
-// Update other functions that access currentProject.lyrics
-function loadDefaultLyricsSections() {
-    ensureProjectExists(); // Add this line
-}
-
-
-// Lyrics system state
+// Enhanced lyrics state
+window.SongForge = window.SongForge || {};
 window.SongForge.lyrics = {
     sections: [],
     currentSection: null,
-    aiAssistantActive: false,
-    draggedSection: null,
-    autoSave: true,
-    wordCount: 0,
-    rhymeCache: new Map(),
-    synonymCache: new Map()
+    rhymeSettings: {
+        density: 5,
+        layeredMetaphors: 3,
+        puns: 2,
+        internalRhymes: 4,
+        doubleEntendres: 2,
+        assonance: 3,
+        consonance: 3,
+        radioFriendly: true
+    },
+    combinedText: '',
+    importedProjects: []
 };
 
-// Default section types and their properties
-const SECTION_TYPES = {
-    verse: { 
-        name: 'Verse', 
-        color: 'blue', 
-        icon: 'align-left',
-        defaultTitle: 'Verse'
-    },
-    chorus: { 
-        name: 'Chorus', 
-        color: 'red', 
-        icon: 'repeat',
-        defaultTitle: 'Chorus'
-    },
-    bridge: { 
-        name: 'Bridge', 
-        color: 'green', 
-        icon: 'bridge',
-        defaultTitle: 'Bridge'
-    },
-    intro: { 
-        name: 'Intro', 
-        color: 'purple', 
-        icon: 'play',
-        defaultTitle: 'Intro'
-    },
-    outro: { 
-        name: 'Outro', 
-        color: 'yellow', 
-        icon: 'stop',
-        defaultTitle: 'Outro'
-    },
-    hook: { 
-        name: 'Hook', 
-        color: 'pink', 
-        icon: 'anchor',
-        defaultTitle: 'Hook'
-    },
-    prechorus: { 
-        name: 'Pre-Chorus', 
-        color: 'indigo', 
-        icon: 'arrow-up',
-        defaultTitle: 'Pre-Chorus'
-    },
-    interlude: { 
-        name: 'Interlude', 
-        color: 'gray', 
-        icon: 'pause',
-        defaultTitle: 'Interlude'
-    }
+// Word banks for AI suggestions
+const WORD_BANKS = {
+    emotions: ['love', 'hate', 'joy', 'pain', 'hope', 'fear', 'anger', 'peace', 'trust', 'doubt'],
+    actions: ['run', 'fly', 'climb', 'fall', 'rise', 'fight', 'dance', 'sing', 'write', 'dream'],
+    objects: ['star', 'moon', 'fire', 'water', 'mountain', 'ocean', 'city', 'road', 'bridge', 'door'],
+    abstract: ['freedom', 'destiny', 'time', 'space', 'truth', 'memory', 'soul', 'spirit', 'mind', 'heart'],
+    colors: ['red', 'blue', 'green', 'gold', 'silver', 'black', 'white', 'purple', 'orange', 'yellow']
 };
 
 // =========================================
-// LYRICS INITIALIZATION
+// ENHANCED LYRICS CONTENT LOADING
 // =========================================
 
 /**
- * Initialize lyrics system
+ * Load enhanced lyrics content
  */
-function initializeLyrics() {
-    setupLyricsEventListeners();
-    setupDragAndDropLyrics();
-    setupAIHandlers();
+function loadEnhancedLyricsContent() {
+    const tabContent = document.getElementById('tabContent');
+    if (!tabContent) return;
     
-    // Load default sections if none exist
-    if (window.SongForge.currentProject.lyrics.length === 0) {
-        loadDefaultLyricsSections();
-    }
+    tabContent.innerHTML = `
+        <div class="grid lg:grid-cols-4 gap-6">
+            <!-- Main Lyrics Editor -->
+            <div class="lg:col-span-2">
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Lyrics Editor</h3>
+                        <div class="flex space-x-2">
+                            <button id="addLyricsSection" class="text-primary hover:text-primary-dark transition-colors">
+                                <i data-lucide="plus" class="w-4 h-4 mr-1 inline"></i>
+                                Add Section
+                            </button>
+                            <button id="importLyricsBtn" class="bg-secondary hover:bg-secondary-dark text-white px-3 py-1 rounded text-sm transition-colors">
+                                <i data-lucide="upload" class="w-3 h-3 mr-1 inline"></i>
+                                Import
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="lyricsSections" class="space-y-4 mb-6">
+                        <!-- Lyrics sections will be rendered here -->
+                    </div>
+                    
+                    <!-- Combined View -->
+                    <div class="border-t border-gray-200 dark:border-gray-700 pt-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-medium">Combined Lyrics</h4>
+                            <button id="updateCombinedBtn" class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-sm transition-colors">
+                                Update Combined
+                            </button>
+                        </div>
+                        <textarea id="combinedLyrics" placeholder="Click 'Update Combined' to merge all sections..." 
+                                 class="w-full h-48 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-bg dark:bg-dark-bg resize-none custom-scrollbar text-base"></textarea>
+                        <div class="mt-2 flex space-x-2">
+                            <button id="exportCombinedTxt" class="text-sm bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors">
+                                Export TXT
+                            </button>
+                            <button id="exportCombinedMd" class="text-sm bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded transition-colors">
+                                Export Markdown
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Rhyme Builder -->
+            <div class="space-y-6">
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                    <h3 class="text-lg font-semibold mb-4">AI Rhyme Builder</h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Target Word</label>
+                            <input type="text" id="rhymeTargetWord" placeholder="Enter word to rhyme..." 
+                                   class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-bg dark:bg-dark-bg text-base">
+                        </div>
+                        
+                        <!-- Rhyme Settings Sliders -->
+                        <div class="space-y-3">
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Rhyme Density</span>
+                                    <span id="rhymeDensityValue">5</span>
+                                </label>
+                                <input type="range" id="rhymeDensity" min="1" max="10" value="5" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Layered Metaphors</span>
+                                    <span id="layeredMetaphorsValue">3</span>
+                                </label>
+                                <input type="range" id="layeredMetaphors" min="1" max="10" value="3" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Puns</span>
+                                    <span id="punsValue">2</span>
+                                </label>
+                                <input type="range" id="puns" min="0" max="10" value="2" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Internal Rhymes</span>
+                                    <span id="internalRhymesValue">4</span>
+                                </label>
+                                <input type="range" id="internalRhymes" min="1" max="10" value="4" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Double Entendres</span>
+                                    <span id="doubleEntendresValue">2</span>
+                                </label>
+                                <input type="range" id="doubleEntendres" min="0" max="10" value="2" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Assonance</span>
+                                    <span id="assonanceValue">3</span>
+                                </label>
+                                <input type="range" id="assonance" min="1" max="10" value="3" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div>
+                                <label class="flex justify-between text-sm font-medium mb-1">
+                                    <span>Consonance</span>
+                                    <span id="consonanceValue">3</span>
+                                </label>
+                                <input type="range" id="consonance" min="1" max="10" value="3" 
+                                       class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="radioFriendly" checked 
+                                       class="mr-2 text-primary focus:ring-primary">
+                                <label for="radioFriendly" class="text-sm">Radio Friendly</label>
+                            </div>
+                        </div>
+                        
+                        <button id="generateRhymes" class="w-full bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
+                            Generate Rhymes
+                        </button>
+                        
+                        <div id="rhymeResults" class="hidden">
+                            <h4 class="font-medium mb-2">Suggestions:</h4>
+                            <div id="rhymesList" class="space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                                <!-- Rhyme suggestions will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lyrics Tools -->
+            <div class="space-y-6">
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                    <h3 class="text-lg font-semibold mb-4">Lyrics Tools</h3>
+                    
+                    <div class="space-y-3">
+                        <button id="aiLyricsAssist" class="w-full text-left p-3 bg-light-bg dark:bg-dark-bg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700">
+                            <i data-lucide="sparkles" class="w-4 h-4 mr-2 inline text-primary"></i>
+                            AI Writing Assistant
+                        </button>
+                        
+                        <button id="synonymFinder" class="w-full text-left p-3 bg-light-bg dark:bg-dark-bg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700">
+                            <i data-lucide="book-open" class="w-4 h-4 mr-2 inline text-primary"></i>
+                            Synonym Finder
+                        </button>
+                        
+                        <button id="wordSuggestor" class="w-full text-left p-3 bg-light-bg dark:bg-dark-bg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700">
+                            <i data-lucide="lightbulb" class="w-4 h-4 mr-2 inline text-primary"></i>
+                            Word Suggestions
+                        </button>
+                        
+                        <button id="syllableCounter" class="w-full text-left p-3 bg-light-bg dark:bg-dark-bg rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors border border-gray-200 dark:border-gray-700">
+                            <i data-lucide="hash" class="w-4 h-4 mr-2 inline text-primary"></i>
+                            Syllable Counter
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Import from Projects -->
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                    <h3 class="text-lg font-semibold mb-4">Import from Projects</h3>
+                    
+                    <div id="importableProjects" class="space-y-2 mb-4 max-h-32 overflow-y-auto custom-scrollbar">
+                        <!-- Available projects will appear here -->
+                    </div>
+                    
+                    <button id="refreshProjectsList" class="w-full bg-secondary hover:bg-secondary-dark text-white py-2 px-4 rounded-lg transition-colors text-sm">
+                        Refresh Projects List
+                    </button>
+                </div>
+                
+                <!-- Stats -->
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                    <h3 class="text-lg font-semibold mb-4">Lyrics Stats</h3>
+                    
+                    <div id="lyricsStats" class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>Total Words:</span>
+                            <span id="totalWords">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Total Lines:</span>
+                            <span id="totalLines">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Sections:</span>
+                            <span id="totalSections">0</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Avg Words/Line:</span>
+                            <span id="avgWordsPerLine">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
     
+    // Initialize enhanced lyrics
+    initializeEnhancedLyrics();
+    
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+// =========================================
+// ENHANCED LYRICS INITIALIZATION
+// =========================================
+
+/**
+ * Initialize enhanced lyrics system
+ */
+function initializeEnhancedLyrics() {
+    setupEnhancedLyricsEventListeners();
+    loadLyricsData();
+    setupRhymeSettings();
+    loadImportableProjects();
     renderLyricsSections();
-    console.log('Lyrics system initialized');
 }
 
 /**
- * Load default lyrics sections
+ * Setup enhanced lyrics event listeners
  */
-function loadDefaultLyricsSections() {
-    const defaultSections = [
-        { type: 'intro', title: 'Intro', content: '' },
-        { type: 'verse', title: 'Verse 1', content: '' },
-        { type: 'chorus', title: 'Chorus', content: '' },
-        { type: 'verse', title: 'Verse 2', content: '' },
-        { type: 'chorus', title: 'Chorus', content: '' },
-        { type: 'bridge', title: 'Bridge', content: '' },
-        { type: 'chorus', title: 'Chorus', content: '' },
-        { type: 'outro', title: 'Outro', content: '' }
+function setupEnhancedLyricsEventListeners() {
+    // Main buttons
+    const addLyricsSection = document.getElementById('addLyricsSection');
+    const importLyricsBtn = document.getElementById('importLyricsBtn');
+    const updateCombinedBtn = document.getElementById('updateCombinedBtn');
+    const generateRhymes = document.getElementById('generateRhymes');
+    
+    if (addLyricsSection) addLyricsSection.addEventListener('click', showAddSectionDialog);
+    if (importLyricsBtn) importLyricsBtn.addEventListener('click', showImportDialog);
+    if (updateCombinedBtn) updateCombinedBtn.addEventListener('click', updateCombinedLyrics);
+    if (generateRhymes) generateRhymes.addEventListener('click', generateAdvancedRhymes);
+    
+    // Export buttons
+    const exportCombinedTxt = document.getElementById('exportCombinedTxt');
+    const exportCombinedMd = document.getElementById('exportCombinedMd');
+    
+    if (exportCombinedTxt) exportCombinedTxt.addEventListener('click', () => exportCombined('txt'));
+    if (exportCombinedMd) exportCombinedMd.addEventListener('click', () => exportCombined('md'));
+    
+    // Tool buttons
+    const aiLyricsAssist = document.getElementById('aiLyricsAssist');
+    const synonymFinder = document.getElementById('synonymFinder');
+    const wordSuggestor = document.getElementById('wordSuggestor');
+    const syllableCounter = document.getElementById('syllableCounter');
+    const refreshProjectsList = document.getElementById('refreshProjectsList');
+    
+    if (aiLyricsAssist) aiLyricsAssist.addEventListener('click', showAILyricsAssistant);
+    if (synonymFinder) synonymFinder.addEventListener('click', showSynonymFinder);
+    if (wordSuggestor) wordSuggestor.addEventListener('click', showWordSuggestor);
+    if (syllableCounter) syllableCounter.addEventListener('click', showSyllableCounter);
+    if (refreshProjectsList) refreshProjectsList.addEventListener('click', loadImportableProjects);
+    
+    // Combined lyrics listener
+    const combinedLyrics = document.getElementById('combinedLyrics');
+    if (combinedLyrics) {
+        combinedLyrics.addEventListener('input', (e) => {
+            window.SongForge.lyricsEnhanced.combinedText = e.target.value;
+            markProjectModified();
+        });
+    }
+}
+
+/**
+ * Setup rhyme settings sliders
+ */
+function setupRhymeSettings() {
+    const settings = [
+        'rhymeDensity', 'layeredMetaphors', 'puns', 'internalRhymes', 
+        'doubleEntendres', 'assonance', 'consonance'
     ];
     
-    window.SongForge.currentProject.lyrics = defaultSections.map((section, index) => ({
-        id: generateId(),
-        ...section,
-        order: index,
-        wordCount: 0,
-        lineCount: 0,
-        notes: '',
-        timestamp: new Date()
-    }));
+    settings.forEach(setting => {
+        const slider = document.getElementById(setting);
+        const valueDisplay = document.getElementById(setting + 'Value');
+        
+        if (slider && valueDisplay) {
+            slider.addEventListener('input', (e) => {
+                const value = e.target.value;
+                valueDisplay.textContent = value;
+                
+                // Update settings object
+                const settingKey = setting.replace(/([A-Z])/g, (match, letter) => 
+                    letter.toLowerCase()
+                ).replace(/^(.)/, (match, letter) => letter.toLowerCase());
+                
+                window.SongForge.lyricsEnhanced.rhymeSettings[settingKey] = parseInt(value);
+            });
+        }
+    });
     
-    window.SongForge.lyrics.sections = window.SongForge.currentProject.lyrics;
+    // Radio friendly toggle
+    const radioFriendly = document.getElementById('radioFriendly');
+    if (radioFriendly) {
+        radioFriendly.addEventListener('change', (e) => {
+            window.SongForge.lyricsEnhanced.rhymeSettings.radioFriendly = e.target.checked;
+        });
+    }
+}
+
+/**
+ * Load lyrics data from current project
+ */
+function loadLyricsData() {
+    if (!window.SongForge.app.currentProject) return;
+    
+    // Load existing lyrics or create default structure
+    if (window.SongForge.app.currentProject.lyrics && window.SongForge.app.currentProject.lyrics.length > 0) {
+        window.SongForge.lyricsEnhanced.sections = window.SongForge.app.currentProject.lyrics;
+    } else {
+        // Create default structure
+        window.SongForge.lyricsEnhanced.sections = [
+            { id: generateId(), type: 'verse', title: 'Verse 1', content: '', wordCount: 0, lineCount: 0, order: 0 },
+            { id: generateId(), type: 'chorus', title: 'Chorus', content: '', wordCount: 0, lineCount: 0, order: 1 },
+            { id: generateId(), type: 'verse', title: 'Verse 2', content: '', wordCount: 0, lineCount: 0, order: 2 },
+            { id: generateId(), type: 'chorus', title: 'Chorus', content: '', wordCount: 0, lineCount: 0, order: 3 }
+        ];
+        
+        // Save to project
+        window.SongForge.app.currentProject.lyrics = window.SongForge.lyricsEnhanced.sections;
+    }
+    
+    updateLyricsStats();
 }
 
 // =========================================
-// LYRICS RENDERING
+// LYRICS SECTIONS MANAGEMENT
 // =========================================
 
 /**
- * Render all lyrics sections
+ * Render lyrics sections
  */
 function renderLyricsSections() {
     const container = document.getElementById('lyricsSections');
@@ -190,238 +393,67 @@ function renderLyricsSections() {
     
     container.innerHTML = '';
     
-    // Sort sections by order
-    const sortedSections = [...window.SongForge.lyrics.sections].sort((a, b) => a.order - b.order);
+    const sortedSections = [...window.SongForge.lyricsEnhanced.sections]
+        .sort((a, b) => a.order - b.order);
     
     sortedSections.forEach(section => {
         const sectionElement = createLyricsSectionElement(section);
         container.appendChild(sectionElement);
     });
     
-    // Update word count
     updateLyricsStats();
     
-    // Recreate icons
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 /**
- * Create a lyrics section element
+ * Create lyrics section element
  */
 function createLyricsSectionElement(section) {
-    const sectionType = SECTION_TYPES[section.type] || SECTION_TYPES.verse;
-    
     const element = document.createElement('div');
-    element.className = 'lyrics-section bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:border-primary transition-all duration-200';
+    element.className = 'bg-light-bg dark:bg-dark-bg rounded-lg p-4 border border-gray-200 dark:border-gray-700 hover:border-primary transition-colors';
     element.dataset.sectionId = section.id;
-    element.draggable = true;
     
     element.innerHTML = `
-        <div class="lyrics-section-header flex items-center justify-between mb-3">
+        <div class="flex items-center justify-between mb-3">
             <div class="flex items-center space-x-3">
-                <div class="drag-handle cursor-move p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <button class="drag-handle cursor-move p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                     <i data-lucide="grip-vertical" class="w-4 h-4"></i>
-                </div>
-                <input type="text" 
-                       value="${section.title}" 
-                       class="section-title font-medium bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-2 py-1 text-base"
-                       onchange="updateSectionTitle('${section.id}', this.value)"
-                       placeholder="Section title">
-                <span class="section-type-badge badge-${section.type} text-xs font-medium px-2 py-1 rounded-full">
-                    ${sectionType.name}
-                </span>
+                </button>
+                <input type="text" value="${section.title}" 
+                       class="font-medium bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-primary rounded px-2 py-1 text-base"
+                       onchange="updateSectionTitle('${section.id}', this.value)">
+                <span class="text-xs px-2 py-1 bg-primary bg-opacity-20 text-primary rounded">${section.type}</span>
             </div>
             <div class="flex items-center space-x-2">
-                <button onclick="duplicateSection('${section.id}')" 
-                        class="p-1 text-gray-400 hover:text-blue-500 transition-colors"
-                        title="Duplicate section">
+                <span class="text-xs text-gray-500">${section.wordCount || 0} words</span>
+                <button onclick="duplicateSection('${section.id}')" class="text-gray-400 hover:text-primary transition-colors" title="Duplicate">
                     <i data-lucide="copy" class="w-4 h-4"></i>
                 </button>
-                <button onclick="showSectionOptions('${section.id}')" 
-                        class="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                        title="Section options">
-                    <i data-lucide="more-vertical" class="w-4 h-4"></i>
-                </button>
-                <button onclick="deleteSection('${section.id}')" 
-                        class="p-1 text-gray-400 hover:text-red-500 transition-colors"
-                        title="Delete section">
+                <button onclick="deleteSection('${section.id}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Delete">
                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
         
-        <div class="lyrics-section-content">
-            <textarea 
-                placeholder="Write your lyrics here..." 
-                class="lyrics-textarea w-full h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 resize-none text-base leading-relaxed custom-scrollbar"
-                onchange="updateSectionContent('${section.id}', this.value)"
-                oninput="updateSectionStats('${section.id}', this.value)"
-                data-section-id="${section.id}">${section.content}</textarea>
-        </div>
-        
-        <div class="lyrics-section-footer flex items-center justify-between mt-2 text-xs text-gray-500">
-            <div class="section-stats">
-                <span id="words-${section.id}">${section.wordCount || 0} words</span> • 
-                <span id="lines-${section.id}">${section.lineCount || 0} lines</span>
-            </div>
-            <div class="section-actions flex space-x-2">
-                <button onclick="showRhymeHelper('${section.id}')" 
-                        class="text-primary hover:text-primary-dark transition-colors"
-                        title="Find rhymes">
-                    <i data-lucide="music" class="w-3 h-3"></i>
-                </button>
-                <button onclick="showAIAssist('${section.id}')" 
-                        class="text-primary hover:text-primary-dark transition-colors"
-                        title="AI assistance">
-                    <i data-lucide="sparkles" class="w-3 h-3"></i>
-                </button>
-            </div>
-        </div>
+        <textarea placeholder="Write your lyrics here..." 
+                 class="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel resize-none text-base"
+                 onchange="updateSectionContent('${section.id}', this.value)"
+                 oninput="updateSectionStats('${section.id}', this.value)">${section.content || ''}</textarea>
     `;
     
     return element;
 }
 
 /**
- * Update lyrics statistics
- */
-function updateLyricsStats() {
-    let totalWords = 0;
-    let totalLines = 0;
-    
-    window.SongForge.lyrics.sections.forEach(section => {
-        totalWords += section.wordCount || 0;
-        totalLines += section.lineCount || 0;
-    });
-    
-    window.SongForge.lyrics.wordCount = totalWords;
-    
-    // Update UI if stats container exists
-    const statsContainer = document.getElementById('lyricsStats');
-    if (statsContainer) {
-        statsContainer.innerHTML = `
-            <div class="text-sm text-gray-600 dark:text-gray-400">
-                <span class="font-medium">${totalWords}</span> words • 
-                <span class="font-medium">${totalLines}</span> lines • 
-                <span class="font-medium">${window.SongForge.lyrics.sections.length}</span> sections
-            </div>
-        `;
-    }
-}
-
-// =========================================
-// SECTION MANAGEMENT
-// =========================================
-
-/**
- * Add new section
- */
-function addSection(type = 'verse', title = '', insertAfter = null) {
-    const sectionType = SECTION_TYPES[type] || SECTION_TYPES.verse;
-    const sectionNumber = window.SongForge.lyrics.sections.filter(s => s.type === type).length + 1;
-    
-    const newSection = {
-        id: generateId(),
-        type: type,
-        title: title || `${sectionType.defaultTitle} ${sectionNumber}`,
-        content: '',
-        order: insertAfter ? insertAfter.order + 1 : window.SongForge.lyrics.sections.length,
-        wordCount: 0,
-        lineCount: 0,
-        notes: '',
-        timestamp: new Date()
-    };
-    
-    // Insert section
-    if (insertAfter) {
-        // Reorder existing sections
-        window.SongForge.lyrics.sections.forEach(section => {
-            if (section.order > insertAfter.order) {
-                section.order++;
-            }
-        });
-    }
-    
-    window.SongForge.lyrics.sections.push(newSection);
-    window.SongForge.currentProject.lyrics = window.SongForge.lyrics.sections;
-    
-    renderLyricsSections();
-    
-    // Focus on the new section
-    setTimeout(() => {
-        const textarea = document.querySelector(`[data-section-id="${newSection.id}"]`);
-        if (textarea) textarea.focus();
-    }, 100);
-    
-    showNotification(`${sectionType.name} section added`, 'success');
-    
-    return newSection;
-}
-
-/**
- * Delete section
- */
-function deleteSection(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    if (!section) return;
-    
-    showConfirmDialog(`Are you sure you want to delete "${section.title}"?`, () => {
-        // Remove section
-        window.SongForge.lyrics.sections = window.SongForge.lyrics.sections.filter(s => s.id !== sectionId);
-        window.SongForge.currentProject.lyrics = window.SongForge.lyrics.sections;
-        
-        // Reorder remaining sections
-        window.SongForge.lyrics.sections
-            .sort((a, b) => a.order - b.order)
-            .forEach((section, index) => {
-                section.order = index;
-            });
-        
-        renderLyricsSections();
-        showNotification('Section deleted', 'info');
-    });
-}
-
-/**
- * Duplicate section
- */
-function duplicateSection(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    if (!section) return;
-    
-    const duplicatedSection = {
-        ...deepClone(section),
-        id: generateId(),
-        title: `${section.title} (Copy)`,
-        order: section.order + 1,
-        timestamp: new Date()
-    };
-    
-    // Reorder existing sections
-    window.SongForge.lyrics.sections.forEach(s => {
-        if (s.order > section.order) {
-            s.order++;
-        }
-    });
-    
-    window.SongForge.lyrics.sections.push(duplicatedSection);
-    window.SongForge.currentProject.lyrics = window.SongForge.lyrics.sections;
-    
-    renderLyricsSections();
-    showNotification('Section duplicated', 'success');
-}
-
-/**
  * Update section title
  */
 function updateSectionTitle(sectionId, title) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
+    const section = window.SongForge.lyricsEnhanced.sections.find(s => s.id === sectionId);
     if (section && title.trim()) {
         section.title = title.trim();
-        
-        if (window.SongForge.lyrics.autoSave) {
-            autoSaveLyrics();
-        }
+        saveLyricsToProject();
+        markProjectModified();
     }
 }
 
@@ -429,14 +461,12 @@ function updateSectionTitle(sectionId, title) {
  * Update section content
  */
 function updateSectionContent(sectionId, content) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
+    const section = window.SongForge.lyricsEnhanced.sections.find(s => s.id === sectionId);
     if (section) {
         section.content = content;
         updateSectionStats(sectionId, content);
-        
-        if (window.SongForge.lyrics.autoSave) {
-            autoSaveLyrics();
-        }
+        saveLyricsToProject();
+        markProjectModified();
     }
 }
 
@@ -444,7 +474,7 @@ function updateSectionContent(sectionId, content) {
  * Update section statistics
  */
 function updateSectionStats(sectionId, content) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
+    const section = window.SongForge.lyricsEnhanced.sections.find(s => s.id === sectionId);
     if (!section) return;
     
     const words = content.trim() ? content.trim().split(/\s+/).length : 0;
@@ -453,646 +483,67 @@ function updateSectionStats(sectionId, content) {
     section.wordCount = words;
     section.lineCount = lines;
     
-    // Update UI
-    const wordsSpan = document.getElementById(`words-${sectionId}`);
-    const linesSpan = document.getElementById(`lines-${sectionId}`);
+    // Update word count display
+    const sectionElement = document.querySelector(`[data-section-id="${sectionId}"]`);
+    if (sectionElement) {
+        const wordCountSpan = sectionElement.querySelector('.text-xs.text-gray-500');
+        if (wordCountSpan) {
+            wordCountSpan.textContent = `${words} words`;
+        }
+    }
     
-    if (wordsSpan) wordsSpan.textContent = `${words} words`;
-    if (linesSpan) linesSpan.textContent = `${lines} lines`;
-    
-    // Throttled update of overall stats
-    const debouncedUpdate = debounce(updateLyricsStats, 500);
-    debouncedUpdate();
+    updateLyricsStats();
 }
 
 /**
- * Show section options menu
+ * Duplicate section
  */
-function showSectionOptions(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
+function duplicateSection(sectionId) {
+    const section = window.SongForge.lyricsEnhanced.sections.find(s => s.id === sectionId);
     if (!section) return;
     
-    const sectionTypes = Object.entries(SECTION_TYPES).map(([key, type]) => 
-        `<option value="${key}" ${section.type === key ? 'selected' : ''}>${type.name}</option>`
-    ).join('');
+    const duplicatedSection = {
+        ...deepClone(section),
+        id: generateId(),
+        title: `${section.title} (Copy)`,
+        order: section.order + 1
+    };
     
-    const content = `
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Section Type</label>
-                <select id="sectionTypeSelect" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
-                    ${sectionTypes}
-                </select>
-            </div>
-            
-            <div>
-                <label class="block text-sm font-medium mb-1">Section Notes</label>
-                <textarea id="sectionNotes" placeholder="Add notes about this section..." 
-                         class="w-full h-20 p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 resize-none text-base">${section.notes || ''}</textarea>
-            </div>
-            
-            <div class="text-xs text-gray-500">
-                Created: ${formatDate(new Date(section.timestamp), 'datetime')}
-            </div>
-            
-            <div class="flex space-x-3">
-                <button onclick="updateSectionOptions('${sectionId}')" 
-                        class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
-                    Save Changes
-                </button>
-                <button onclick="closeModal()" 
-                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    `;
+    // Adjust order of subsequent sections
+    window.SongForge.lyricsEnhanced.sections.forEach(s => {
+        if (s.order > section.order) {
+            s.order++;
+        }
+    });
     
-    showModal(`${section.title} Options`, content);
+    window.SongForge.lyricsEnhanced.sections.push(duplicatedSection);
+    saveLyricsToProject();
+    renderLyricsSections();
+    markProjectModified();
+    
+    showNotification('Section duplicated', 'success');
 }
 
 /**
- * Update section options
+ * Delete section
  */
-function updateSectionOptions(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    if (!section) return;
-    
-    const typeSelect = document.getElementById('sectionTypeSelect');
-    const notesTextarea = document.getElementById('sectionNotes');
-    
-    if (typeSelect && notesTextarea) {
-        section.type = typeSelect.value;
-        section.notes = notesTextarea.value;
+function deleteSection(sectionId) {
+    showConfirmDialog('Are you sure you want to delete this section?', () => {
+        window.SongForge.lyricsEnhanced.sections = window.SongForge.lyricsEnhanced.sections
+            .filter(s => s.id !== sectionId);
         
+        // Reorder remaining sections
+        window.SongForge.lyricsEnhanced.sections
+            .sort((a, b) => a.order - b.order)
+            .forEach((section, index) => {
+                section.order = index;
+            });
+        
+        saveLyricsToProject();
         renderLyricsSections();
-        closeModal();
-        showNotification('Section updated', 'success');
-    }
-}
-
-// =========================================
-// DRAG AND DROP
-// =========================================
-
-/**
- * Setup drag and drop for lyrics sections
- */
-function setupDragAndDropLyrics() {
-    const container = document.getElementById('lyricsSections');
-    if (!container) return;
-    
-    container.addEventListener('dragstart', handleDragStart);
-    container.addEventListener('dragover', handleDragOver);
-    container.addEventListener('drop', handleDrop);
-    container.addEventListener('dragend', handleDragEnd);
-}
-
-/**
- * Handle drag start
- */
-function handleDragStart(e) {
-    const sectionElement = e.target.closest('.lyrics-section');
-    if (!sectionElement) return;
-    
-    window.SongForge.lyrics.draggedSection = sectionElement.dataset.sectionId;
-    sectionElement.classList.add('dragging', 'opacity-50');
-    
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/html', sectionElement.outerHTML);
-}
-
-/**
- * Handle drag over
- */
-function handleDragOver(e) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    const afterElement = getDragAfterElement(e.clientY);
-    const draggedElement = document.querySelector('.dragging');
-    
-    if (afterElement == null) {
-        e.currentTarget.appendChild(draggedElement);
-    } else {
-        e.currentTarget.insertBefore(draggedElement, afterElement);
-    }
-}
-
-/**
- * Handle drop
- */
-function handleDrop(e) {
-    e.preventDefault();
-    
-    const draggedSectionId = window.SongForge.lyrics.draggedSection;
-    if (!draggedSectionId) return;
-    
-    // Reorder sections based on new DOM order
-    const sectionElements = Array.from(document.querySelectorAll('.lyrics-section'));
-    
-    sectionElements.forEach((element, index) => {
-        const sectionId = element.dataset.sectionId;
-        const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-        if (section) {
-            section.order = index;
-        }
-    });
-    
-    // Update project data
-    window.SongForge.currentProject.lyrics = window.SongForge.lyrics.sections;
-    
-    showNotification('Sections reordered', 'success');
-}
-
-/**
- * Handle drag end
- */
-function handleDragEnd(e) {
-    const draggedElement = document.querySelector('.dragging');
-    if (draggedElement) {
-        draggedElement.classList.remove('dragging', 'opacity-50');
-    }
-    
-    window.SongForge.lyrics.draggedSection = null;
-}
-
-/**
- * Get the element after which to insert the dragged element
- */
-function getDragAfterElement(y) {
-    const draggableElements = [...document.querySelectorAll('.lyrics-section:not(.dragging)')];
-    
-    return draggableElements.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
+        markProjectModified();
         
-        if (offset < 0 && offset > closest.offset) {
-            return { offset: offset, element: child };
-        } else {
-            return closest;
-        }
-    }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
-// =========================================
-// AI ASSISTANCE
-// =========================================
-
-/**
- * Setup AI handlers for lyrics assistance
- */
-function setupAIHandlers() {
-    // Register Poe handlers for lyrics AI features
-    if (window.Poe && window.Poe.registerHandler) {
-        window.Poe.registerHandler('lyrics-ai-assist', handleAIAssistResponse);
-        window.Poe.registerHandler('lyrics-rhyme-finder', handleRhymeFinderResponse);
-        window.Poe.registerHandler('lyrics-synonym-finder', handleSynonymFinderResponse);
-        window.Poe.registerHandler('lyrics-idea-generator', handleIdeaGeneratorResponse);
-    }
-}
-
-/**
- * Show AI assistance for a section
- */
-function showAIAssist(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    if (!section) return;
-    
-    const content = `
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">What do you need help with?</label>
-                <textarea id="aiPrompt" placeholder="e.g., Write a verse about overcoming challenges, or improve these lyrics..." 
-                         class="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 resize-none text-base"></textarea>
-            </div>
-            
-            ${section.content ? `
-            <div>
-                <label class="block text-sm font-medium mb-1">Current Lyrics:</label>
-                <div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm max-h-32 overflow-y-auto custom-scrollbar">
-                    ${section.content.replace(/\n/g, '<br>')}
-                </div>
-            </div>
-            ` : ''}
-            
-            <div class="flex space-x-3">
-                <button onclick="requestAIAssist('${sectionId}')" 
-                        class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-2 inline"></i>
-                    Get AI Help
-                </button>
-                <button onclick="closeModal()" 
-                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                    Cancel
-                </button>
-            </div>
-            
-            <div id="aiResponse" class="hidden">
-                <label class="block text-sm font-medium mb-1">AI Response:</label>
-                <div id="aiContent" class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm max-h-48 overflow-y-auto custom-scrollbar"></div>
-                <div class="mt-3 flex space-x-2">
-                    <button onclick="applyAIResponse('${sectionId}')" 
-                            class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm transition-colors">
-                        Apply to Section
-                    </button>
-                    <button onclick="copyAIResponse()" 
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
-                        Copy to Clipboard
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    showModal(`AI Assistant - ${section.title}`, content);
-}
-
-/**
- * Request AI assistance
- */
-async function requestAIAssist(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    const promptTextarea = document.getElementById('aiPrompt');
-    
-    if (!section || !promptTextarea || !promptTextarea.value.trim()) {
-        showNotification('Please enter a request for the AI assistant', 'error');
-        return;
-    }
-    
-    const prompt = promptTextarea.value.trim();
-    const responseDiv = document.getElementById('aiResponse');
-    const contentDiv = document.getElementById('aiContent');
-    
-    responseDiv.classList.remove('hidden');
-    contentDiv.innerHTML = '<div class="flex items-center"><div class="spinner mr-3"></div>Generating response...</div>';
-    
-    try {
-        let aiPrompt = `You are a professional songwriter and lyricist. Help with this request: ${prompt}`;
-        
-        if (section.content) {
-            aiPrompt += `\n\nCurrent lyrics for this section:\n${section.content}`;
-        }
-        
-        aiPrompt += '\n\nProvide creative, professional lyrics that match the request. Focus on the specific section type and maintain good flow and rhythm.';
-        
-        await window.Poe.sendUserMessage(`@Claude-Sonnet-4 ${aiPrompt}`, {
-            handler: 'lyrics-ai-assist',
-            stream: true,
-            openChat: false,
-            handlerContext: { sectionId: sectionId }
-        });
-        
-    } catch (error) {
-        contentDiv.textContent = 'Error generating response. Please try again.';
-        handleError(error, 'AI assistance request');
-    }
-}
-
-/**
- * Handle AI assistance response
- */
-function handleAIAssistResponse(result, context) {
-    const contentDiv = document.getElementById('aiContent');
-    if (!contentDiv) return;
-    
-    const msg = result.responses[0];
-    if (msg.status === 'error') {
-        contentDiv.textContent = 'Error: ' + msg.statusText;
-    } else if (msg.status === 'incomplete') {
-        contentDiv.textContent = msg.content;
-    } else if (msg.status === 'complete') {
-        contentDiv.textContent = msg.content;
-        
-        // Store response for later use
-        window.SongForge.lyrics.lastAIResponse = msg.content;
-    }
-}
-
-/**
- * Apply AI response to section
- */
-function applyAIResponse(sectionId) {
-    const section = window.SongForge.lyrics.sections.find(s => s.id === sectionId);
-    const response = window.SongForge.lyrics.lastAIResponse;
-    
-    if (!section || !response) return;
-    
-    section.content = response;
-    updateSectionStats(sectionId, response);
-    
-    // Update textarea if visible
-    const textarea = document.querySelector(`[data-section-id="${sectionId}"]`);
-    if (textarea) {
-        textarea.value = response;
-    }
-    
-    closeModal();
-    showNotification('AI response applied to section', 'success');
-}
-
-/**
- * Copy AI response to clipboard
- */
-function copyAIResponse() {
-    const response = window.SongForge.lyrics.lastAIResponse;
-    if (!response) return;
-    
-    navigator.clipboard.writeText(response).then(() => {
-        showNotification('Response copied to clipboard', 'success');
-    }).catch(() => {
-        showNotification('Failed to copy to clipboard', 'error');
-    });
-}
-
-// =========================================
-// RHYME HELPER
-// =========================================
-
-/**
- * Show rhyme helper
- */
-function showRhymeHelper(sectionId) {
-    const content = `
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Word to find rhymes for:</label>
-                <input type="text" id="rhymeWord" placeholder="e.g., love, heart, dream..." 
-                       class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
-            </div>
-            
-            <div class="flex space-x-3">
-                <button onclick="findRhymes('${sectionId}')" 
-                        class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
-                    <i data-lucide="music" class="w-4 h-4 mr-2 inline"></i>
-                    Find Rhymes
-                </button>
-                <button onclick="closeModal()" 
-                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                    Close
-                </button>
-            </div>
-            
-            <div id="rhymeResults" class="hidden">
-                <label class="block text-sm font-medium mb-1">Rhyming Words:</label>
-                <div id="rhymeList" class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm max-h-48 overflow-y-auto custom-scrollbar"></div>
-            </div>
-        </div>
-    `;
-    
-    showModal('Find Rhymes', content);
-}
-
-/**
- * Find rhymes for a word
- */
-async function findRhymes(sectionId) {
-    const wordInput = document.getElementById('rhymeWord');
-    if (!wordInput || !wordInput.value.trim()) {
-        showNotification('Please enter a word to find rhymes for', 'error');
-        return;
-    }
-    
-    const word = wordInput.value.trim().toLowerCase();
-    const resultsDiv = document.getElementById('rhymeResults');
-    const listDiv = document.getElementById('rhymeList');
-    
-    // Check cache first
-    if (window.SongForge.lyrics.rhymeCache.has(word)) {
-        displayRhymes(window.SongForge.lyrics.rhymeCache.get(word));
-        return;
-    }
-    
-    resultsDiv.classList.remove('hidden');
-    listDiv.innerHTML = '<div class="flex items-center"><div class="spinner mr-3"></div>Finding rhymes...</div>';
-    
-    try {
-        await window.Poe.sendUserMessage(`@Claude-Sonnet-4 Find words that rhyme with "${word}". Provide ONLY a comma-separated list of rhyming words, no explanations or additional text.`, {
-            handler: 'lyrics-rhyme-finder',
-            stream: false,
-            openChat: false,
-            handlerContext: { word: word }
-        });
-        
-    } catch (error) {
-        listDiv.textContent = 'Error finding rhymes. Please try again.';
-        handleError(error, 'Rhyme finder');
-    }
-}
-
-/**
- * Handle rhyme finder response
- */
-function handleRhymeFinderResponse(result, context) {
-    const listDiv = document.getElementById('rhymeList');
-    if (!listDiv) return;
-    
-    const msg = result.responses[0];
-    if (msg.status === 'error') {
-        listDiv.textContent = 'Error: ' + msg.statusText;
-    } else if (msg.status === 'complete') {
-        const rhymes = msg.content.split(',').map(word => word.trim()).filter(word => word);
-        
-        // Cache the results
-        window.SongForge.lyrics.rhymeCache.set(context.word, rhymes);
-        
-        displayRhymes(rhymes);
-    }
-}
-
-/**
- * Display rhymes in the UI
- */
-function displayRhymes(rhymes) {
-    const listDiv = document.getElementById('rhymeList');
-    if (!listDiv) return;
-    
-    if (rhymes.length === 0) {
-        listDiv.textContent = 'No rhymes found.';
-        return;
-    }
-    
-    listDiv.innerHTML = rhymes.map(word => 
-        `<span class="inline-block bg-primary text-white px-2 py-1 rounded text-xs mr-2 mb-2 cursor-pointer hover:bg-primary-dark transition-colors" onclick="insertWordAtCursor('${word}')">${word}</span>`
-    ).join('');
-}
-
-/**
- * Insert word at cursor position
- */
-function insertWordAtCursor(word) {
-    // Find the currently focused textarea
-    const activeTextarea = document.activeElement;
-    
-    if (activeTextarea && activeTextarea.tagName === 'TEXTAREA' && activeTextarea.classList.contains('lyrics-textarea')) {
-        const start = activeTextarea.selectionStart;
-        const end = activeTextarea.selectionEnd;
-        const text = activeTextarea.value;
-        
-        const newText = text.substring(0, start) + word + text.substring(end);
-        activeTextarea.value = newText;
-        
-        // Update the section content
-        const sectionId = activeTextarea.dataset.sectionId;
-        if (sectionId) {
-            updateSectionContent(sectionId, newText);
-        }
-        
-        // Set cursor position after the inserted word
-        activeTextarea.focus();
-        activeTextarea.setSelectionRange(start + word.length, start + word.length);
-        
-        showNotification(`"${word}" inserted`, 'success', 1000);
-    } else {
-        // Copy to clipboard as fallback
-        navigator.clipboard.writeText(word).then(() => {
-            showNotification(`"${word}" copied to clipboard`, 'info');
-        });
-    }
-}
-
-// =========================================
-// LYRICS EXPORT
-// =========================================
-
-/**
- * Export lyrics as text
- */
-function exportLyricsAsText() {
-    const project = window.SongForge.currentProject;
-    let content = '';
-    
-    // Header
-    content += `${project.title || 'Untitled'}\n`;
-    if (project.artist) content += `Artist: ${project.artist}\n`;
-    if (project.genre) content += `Genre: ${project.genre}\n`;
-    if (project.bpm) content += `BPM: ${project.bpm}\n`;
-    if (project.key) content += `Key: ${project.key}\n`;
-    content += `\n`;
-    
-    // Sections
-    const sortedSections = [...window.SongForge.lyrics.sections]
-        .sort((a, b) => a.order - b.order)
-        .filter(section => section.content.trim());
-    
-    sortedSections.forEach(section => {
-        content += `[${section.title}]\n`;
-        content += `${section.content}\n\n`;
-    });
-    
-    // Footer
-    content += `\n---\n`;
-    content += `Created with SongForge\n`;
-    content += `Export Date: ${formatDate(new Date(), 'datetime')}\n`;
-    
-    downloadFile(content, `${project.title || 'lyrics'}.txt`, 'text/plain');
-    showNotification('Lyrics exported as text', 'success');
-}
-
-/**
- * Export lyrics as Markdown
- */
-function exportLyricsAsMarkdown() {
-    const project = window.SongForge.currentProject;
-    let content = '';
-    
-    // Header
-    content += `# ${project.title || 'Untitled'}\n\n`;
-    
-    if (project.artist || project.genre || project.bpm || project.key) {
-        content += `**Project Details:**\n`;
-        if (project.artist) content += `- **Artist:** ${project.artist}\n`;
-        if (project.genre) content += `- **Genre:** ${project.genre}\n`;
-        if (project.bpm) content += `- **BPM:** ${project.bpm}\n`;
-        if (project.key) content += `- **Key:** ${project.key}\n`;
-        content += `\n`;
-    }
-    
-    // Sections
-    const sortedSections = [...window.SongForge.lyrics.sections]
-        .sort((a, b) => a.order - b.order)
-        .filter(section => section.content.trim());
-    
-    sortedSections.forEach(section => {
-        content += `## ${section.title}\n\n`;
-        content += `${section.content}\n\n`;
-    });
-    
-    // Footer
-    content += `---\n\n`;
-    content += `*Created with SongForge*  \n`;
-    content += `*Export Date: ${formatDate(new Date(), 'datetime')}*\n`;
-    
-    downloadFile(content, `${project.title || 'lyrics'}.md`, 'text/markdown');
-    showNotification('Lyrics exported as Markdown', 'success');
-}
-
-// =========================================
-// AUTO-SAVE
-// =========================================
-
-/**
- * Auto-save lyrics to local storage
- */
-function autoSaveLyrics() {
-    if (window.SongForge.lyrics.autoSave) {
-        saveToStorage('current-project', window.SongForge.currentProject);
-    }
-}
-
-// =========================================
-// EVENT LISTENERS
-// =========================================
-
-/**
- * Setup lyrics event listeners
- */
-function setupLyricsEventListeners() {
-    // Add section button
-    const addSectionBtn = document.getElementById('addSectionBtn');
-    if (addSectionBtn) {
-        addSectionBtn.addEventListener('click', showAddSectionDialog);
-    }
-    
-    // AI assist button
-    const aiAssistBtn = document.getElementById('aiAssistBtn');
-    if (aiAssistBtn) {
-        aiAssistBtn.addEventListener('click', () => showGeneralAIAssist());
-    }
-    
-    // Rhyme button
-    const rhymeBtn = document.getElementById('rhymeBtn');
-    if (rhymeBtn) {
-        rhymeBtn.addEventListener('click', () => showRhymeHelper(null));
-    }
-    
-    // Export buttons
-    const exportTxtBtn = document.getElementById('exportTxtBtn');
-    const exportMdBtn = document.getElementById('exportMdBtn');
-    
-    if (exportTxtBtn) exportTxtBtn.addEventListener('click', exportLyricsAsText);
-    if (exportMdBtn) exportMdBtn.addEventListener('click', exportLyricsAsMarkdown);
-    
-    // Keyboard shortcuts for lyrics tab
-    document.addEventListener('keydown', (e) => {
-        // Only apply shortcuts when in lyrics tab
-        const lyricsTab = document.getElementById('lyricsTab');
-        if (!lyricsTab || lyricsTab.classList.contains('hidden')) return;
-        
-        // Ctrl/Cmd + Enter - Add new section after current
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            showAddSectionDialog();
-        }
-        
-        // Ctrl/Cmd + D - Duplicate current section
-        if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
-            e.preventDefault();
-            const activeTextarea = document.activeElement;
-            if (activeTextarea && activeTextarea.dataset.sectionId) {
-                duplicateSection(activeTextarea.dataset.sectionId);
-            }
-        }
+        showNotification('Section deleted', 'info');
     });
 }
 
@@ -1100,16 +551,29 @@ function setupLyricsEventListeners() {
  * Show add section dialog
  */
 function showAddSectionDialog() {
-    const sectionTypes = Object.entries(SECTION_TYPES).map(([key, type]) => 
-        `<option value="${key}">${type.name}</option>`
+    const sectionTypes = [
+        { value: 'verse', name: 'Verse' },
+        { value: 'chorus', name: 'Chorus' },
+        { value: 'bridge', name: 'Bridge' },
+        { value: 'intro', name: 'Intro' },
+        { value: 'outro', name: 'Outro' },
+        { value: 'hook', name: 'Hook' },
+        { value: 'prechorus', name: 'Pre-Chorus' },
+        { value: 'interlude', name: 'Interlude' }
+    ];
+    
+    const typeOptions = sectionTypes.map(type => 
+        `<option value="${type.value}">${type.name}</option>`
     ).join('');
     
     const content = `
         <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Add New Section</h3>
+            
             <div>
                 <label class="block text-sm font-medium mb-1">Section Type</label>
                 <select id="newSectionType" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
-                    ${sectionTypes}
+                    ${typeOptions}
                 </select>
             </div>
             
@@ -1120,7 +584,7 @@ function showAddSectionDialog() {
             </div>
             
             <div class="flex space-x-3">
-                <button onclick="createNewSection()" 
+                <button onclick="addNewSection()" 
                         class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
                     Add Section
                 </button>
@@ -1132,137 +596,564 @@ function showAddSectionDialog() {
         </div>
     `;
     
-    showModal('Add New Section', content);
+    showModal('Add Section', content);
 }
 
 /**
- * Create new section from dialog
+ * Add new section
  */
-function createNewSection() {
+function addNewSection() {
     const typeSelect = document.getElementById('newSectionType');
     const titleInput = document.getElementById('newSectionTitle');
     
-    if (typeSelect && titleInput) {
-        const type = typeSelect.value;
-        const title = titleInput.value.trim();
+    if (!typeSelect || !titleInput) return;
+    
+    const type = typeSelect.value;
+    const title = titleInput.value.trim();
+    
+    if (!title) {
+        showNotification('Please enter a section title', 'error');
+        return;
+    }
+    
+    const newSection = {
+        id: generateId(),
+        type: type,
+        title: title,
+        content: '',
+        wordCount: 0,
+        lineCount: 0,
+        order: window.SongForge.lyricsEnhanced.sections.length
+    };
+    
+    window.SongForge.lyricsEnhanced.sections.push(newSection);
+    saveLyricsToProject();
+    renderLyricsSections();
+    markProjectModified();
+    closeModal();
+    
+    showNotification('Section added', 'success');
+}
+
+// =========================================
+// ADVANCED RHYME GENERATION
+// =========================================
+
+/**
+ * Generate advanced rhymes with custom settings
+ */
+function generateAdvancedRhymes() {
+    const targetWord = document.getElementById('rhymeTargetWord');
+    if (!targetWord || !targetWord.value.trim()) {
+        showNotification('Please enter a word to rhyme with', 'error');
+        return;
+    }
+    
+    const word = targetWord.value.trim().toLowerCase();
+    const settings = window.SongForge.lyricsEnhanced.rhymeSettings;
+    
+    showLoadingNotification('Generating advanced rhymes...');
+    
+    // Create prompt based on settings
+    const prompt = createRhymePrompt(word, settings);
+    
+    // Use built-in rhyme generation for now
+    generateClientSideRhymes(word, settings);
+}
+
+/**
+ * Create rhyme prompt for AI
+ */
+function createRhymePrompt(word, settings) {
+    let prompt = `Generate creative rhymes and wordplay for "${word}" with these specifications:\n`;
+    prompt += `- Rhyme density: ${settings.rhymeDensity}/10\n`;
+    prompt += `- Layered metaphors: ${settings.layeredMetaphors}/10\n`;
+    prompt += `- Puns: ${settings.puns}/10\n`;
+    prompt += `- Internal rhymes: ${settings.internalRhymes}/10\n`;
+    prompt += `- Double entendres: ${settings.doubleEntendres}/10\n`;
+    prompt += `- Assonance: ${settings.assonance}/10\n`;
+    prompt += `- Consonance: ${settings.consonance}/10\n`;
+    prompt += `- Radio friendly: ${settings.radioFriendly ? 'Yes' : 'No'}\n\n`;
+    prompt += `Provide creative suggestions that incorporate these elements.`;
+    
+    return prompt;
+}
+
+/**
+ * Generate client-side rhymes (fallback)
+ */
+function generateClientSideRhymes(word, settings) {
+    hideLoadingNotification();
+    
+    // Simple rhyme patterns based on endings
+    const rhymes = [];
+    const wordEnding = word.slice(-2);
+    
+    // Basic rhymes
+    const basicRhymes = generateBasicRhymes(word);
+    rhymes.push(...basicRhymes);
+    
+    // Add slant rhymes
+    const slantRhymes = generateSlantRhymes(word);
+    rhymes.push(...slantRhymes);
+    
+    // Add internal rhymes based on settings
+    if (settings.internalRhymes > 5) {
+        const internalRhymes = generateInternalRhymes(word);
+        rhymes.push(...internalRhymes);
+    }
+    
+    // Filter for radio friendly if enabled
+    let filteredRhymes = rhymes;
+    if (settings.radioFriendly) {
+        filteredRhymes = rhymes.filter(rhyme => isRadioFriendly(rhyme));
+    }
+    
+    displayRhymeResults(filteredRhymes.slice(0, 20)); // Show top 20
+}
+
+/**
+ * Generate basic rhymes
+ */
+function generateBasicRhymes(word) {
+    const rhymePatterns = {
+        'ight': ['night', 'light', 'sight', 'flight', 'right', 'fight', 'might'],
+        'ove': ['love', 'above', 'dove', 'shove', 'grove'],
+        'ay': ['day', 'way', 'say', 'play', 'stay', 'gray', 'may'],
+        'ound': ['sound', 'ground', 'round', 'found', 'bound', 'crown'],
+        'eart': ['heart', 'start', 'part', 'smart', 'art', 'chart'],
+        'ime': ['time', 'rhyme', 'climb', 'prime', 'mime', 'chime']
+    };
+    
+    const wordEnding = word.slice(-2);
+    const results = [];
+    
+    // Find matching patterns
+    for (const [pattern, words] of Object.entries(rhymePatterns)) {
+        if (word.endsWith(pattern.slice(-2))) {
+            results.push(...words.filter(w => w !== word));
+        }
+    }
+    
+    return results;
+}
+
+/**
+ * Generate slant rhymes
+ */
+function generateSlantRhymes(word) {
+    const slantPatterns = {
+        'vowel_sounds': {
+            'a': ['fate', 'hate', 'late', 'gate', 'mate'],
+            'e': ['meet', 'beat', 'heat', 'seat', 'neat'],
+            'i': ['light', 'bright', 'sight', 'night', 'fight'],
+            'o': ['hope', 'scope', 'rope', 'cope', 'slope'],
+            'u': ['blue', 'true', 'crew', 'flew', 'knew']
+        }
+    };
+    
+    // Simple vowel sound matching
+    const lastVowel = word.match(/[aeiou]/g)?.pop();
+    const results = slantPatterns.vowel_sounds[lastVowel] || [];
+    
+    return results.filter(w => w !== word);
+}
+
+/**
+ * Generate internal rhymes
+ */
+function generateInternalRhymes(word) {
+    const syllables = word.match(/[aeiou]+/g) || [];
+    const results = [];
+    
+    // Create compound rhymes
+    if (syllables.length > 1) {
+        results.push(`in-${word}`, `out-${word}`, `${word}-ing`, `${word}-ed`);
+    }
+    
+    return results;
+}
+
+/**
+ * Check if word is radio friendly
+ */
+function isRadioFriendly(word) {
+    const explicitWords = ['damn', 'hell', 'ass', 'bitch']; // Basic filter
+    return !explicitWords.some(explicit => word.toLowerCase().includes(explicit));
+}
+
+/**
+ * Display rhyme results
+ */
+function displayRhymeResults(rhymes) {
+    const resultsContainer = document.getElementById('rhymeResults');
+    const rhymesList = document.getElementById('rhymesList');
+    
+    if (!resultsContainer || !rhymesList) return;
+    
+    if (rhymes.length === 0) {
+        rhymesList.innerHTML = '<p class="text-gray-500 text-sm">No rhymes found. Try a different word.</p>';
+    } else {
+        rhymesList.innerHTML = rhymes.map(rhyme => `
+            <div class="p-2 bg-light-panel dark:bg-dark-panel rounded border border-gray-200 dark:border-gray-700 hover:border-primary transition-colors cursor-pointer"
+                 onclick="insertRhymeWord('${rhyme}')">
+                <span class="font-medium">${rhyme}</span>
+            </div>
+        `).join('');
+    }
+    
+    resultsContainer.classList.remove('hidden');
+}
+
+/**
+ * Insert rhyme word into active textarea
+ */
+function insertRhymeWord(word) {
+    const activeElement = document.activeElement;
+    
+    if (activeElement && activeElement.tagName === 'TEXTAREA') {
+        const start = activeElement.selectionStart;
+        const end = activeElement.selectionEnd;
+        const text = activeElement.value;
         
-        addSection(type, title);
-        closeModal();
+        const newText = text.substring(0, start) + word + text.substring(end);
+        activeElement.value = newText;
+        
+        // Trigger change event
+        activeElement.dispatchEvent(new Event('input'));
+        
+        // Set cursor position
+        const newPosition = start + word.length;
+        activeElement.focus();
+        activeElement.setSelectionRange(newPosition, newPosition);
+        
+        showNotification(`"${word}" inserted`, 'success', 1000);
+    } else {
+        // Copy to clipboard as fallback
+        navigator.clipboard.writeText(word).then(() => {
+            showNotification(`"${word}" copied to clipboard`, 'info');
+        });
+    }
+}
+
+// =========================================
+// COMBINED LYRICS MANAGEMENT
+// =========================================
+
+/**
+ * Update combined lyrics
+ */
+function updateCombinedLyrics() {
+    const combinedTextarea = document.getElementById('combinedLyrics');
+    if (!combinedTextarea) return;
+    
+    let combinedText = '';
+    
+    // Get project info
+    const project = window.SongForge.app.currentProject;
+    if (project.title) {
+        combinedText += `${project.title}\n`;
+        if (project.artist) combinedText += `Artist: ${project.artist}\n`;
+        combinedText += '\n';
+    }
+    
+    // Combine all sections in order
+    const sortedSections = [...window.SongForge.lyricsEnhanced.sections]
+        .sort((a, b) => a.order - b.order)
+        .filter(section => section.content && section.content.trim());
+    
+    sortedSections.forEach(section => {
+        combinedText += `[${section.title}]\n`;
+        combinedText += `${section.content}\n\n`;
+    });
+    
+    combinedTextarea.value = combinedText;
+    window.SongForge.lyricsEnhanced.combinedText = combinedText;
+    
+    showNotification('Combined lyrics updated', 'success');
+}
+
+/**
+ * Export combined lyrics
+ */
+function exportCombined(format) {
+    const combinedText = window.SongForge.lyricsEnhanced.combinedText;
+    
+    if (!combinedText || !combinedText.trim()) {
+        showNotification('No combined lyrics to export. Click "Update Combined" first.', 'error');
+        return;
+    }
+    
+    const project = window.SongForge.app.currentProject;
+    const filename = project.title || 'combined-lyrics';
+    
+    if (format === 'md') {
+        // Convert to Markdown format
+        let markdownText = `# ${project.title || 'Untitled'}\n\n`;
+        if (project.artist) markdownText += `**Artist:** ${project.artist}\n\n`;
+        
+        // Convert sections to Markdown
+        const sections = combinedText.split(/$$([^$$]+)\]/);
+        for (let i = 1; i < sections.length; i += 2) {
+            const sectionTitle = sections[i];
+            const sectionContent = sections[i + 1]?.trim();
+            if (sectionContent) {
+                markdownText += `## ${sectionTitle}\n\n${sectionContent}\n\n`;
+            }
+        }
+        
+        downloadFile(markdownText, `${filename}.md`, 'text/markdown');
+    } else {
+        downloadFile(combinedText, `${filename}.txt`, 'text/plain');
+    }
+    
+    showNotification(`Combined lyrics exported as ${format.toUpperCase()}`, 'success');
+}
+
+// =========================================
+// UTILITY FUNCTIONS
+// =========================================
+
+/**
+ * Update lyrics statistics
+ */
+function updateLyricsStats() {
+    const totalWordsElement = document.getElementById('totalWords');
+    const totalLinesElement = document.getElementById('totalLines');
+    const totalSectionsElement = document.getElementById('totalSections');
+    const avgWordsPerLineElement = document.getElementById('avgWordsPerLine');
+    
+    if (!totalWordsElement) return;
+    
+    const sections = window.SongForge.lyricsEnhanced.sections;
+    const totalWords = sections.reduce((sum, section) => sum + (section.wordCount || 0), 0);
+    const totalLines = sections.reduce((sum, section) => sum + (section.lineCount || 0), 0);
+    const avgWordsPerLine = totalLines > 0 ? (totalWords / totalLines).toFixed(1) : 0;
+    
+    totalWordsElement.textContent = totalWords;
+    totalLinesElement.textContent = totalLines;
+    totalSectionsElement.textContent = sections.length;
+    avgWordsPerLineElement.textContent = avgWordsPerLine;
+}
+
+/**
+ * Save lyrics to project
+ */
+function saveLyricsToProject() {
+    if (window.SongForge.app.currentProject) {
+        window.SongForge.app.currentProject.lyrics = window.SongForge.lyricsEnhanced.sections;
     }
 }
 
 /**
- * Show general AI assist (not tied to specific section)
+ * Load importable projects
  */
-function showGeneralAIAssist() {
+function loadImportableProjects() {
+    const container = document.getElementById('importableProjects');
+    if (!container) return;
+    
+    const projects = getProjectsForUser();
+    const currentProjectId = window.SongForge.app.currentProject?.id;
+    
+    // Filter out current project
+    const importableProjects = projects.filter(p => p.id !== currentProjectId && p.lyrics && p.lyrics.length > 0);
+    
+    if (importableProjects.length === 0) {
+        container.innerHTML = '<p class="text-gray-500 text-sm">No projects with lyrics found</p>';
+        return;
+    }
+    
+    container.innerHTML = importableProjects.slice(0, 5).map(project => `
+        <div class="p-2 bg-light-panel dark:bg-dark-panel rounded border border-gray-200 dark:border-gray-700 hover:border-primary transition-colors cursor-pointer"
+             onclick="importLyricsFromProject('${project.id}')">
+            <div class="font-medium text-sm">${project.title || 'Untitled Project'}</div>
+            <div class="text-xs text-gray-500">${project.lyrics.length} sections</div>
+        </div>
+    `).join('');
+}
+
+/**
+ * Import lyrics from project
+ */
+function importLyricsFromProject(projectId) {
+    const projects = getProjectsForUser();
+    const project = projects.find(p => p.id === projectId);
+    
+    if (!project || !project.lyrics) {
+        showNotification('Project not found or has no lyrics', 'error');
+        return;
+    }
+    
+    showConfirmDialog(
+        `Import ${project.lyrics.length} sections from "${project.title || 'Untitled Project'}"?`,
+        () => {
+            // Add imported sections with new IDs
+            const importedSections = project.lyrics.map(section => ({
+                ...section,
+                id: generateId(),
+                title: `${section.title} (Imported)`,
+                order: window.SongForge.lyricsEnhanced.sections.length + section.order
+            }));
+            
+            window.SongForge.lyricsEnhanced.sections.push(...importedSections);
+            saveLyricsToProject();
+            renderLyricsSections();
+            markProjectModified();
+            
+            showNotification(`Imported ${importedSections.length} sections`, 'success');
+        }
+    );
+}
+
+// =========================================
+// AI TOOLS (Placeholder implementations)
+// =========================================
+
+/**
+ * Show AI lyrics assistant
+ */
+function showAILyricsAssistant() {
+    showNotification('AI Lyrics Assistant feature coming soon!', 'info');
+}
+
+/**
+ * Show synonym finder
+ */
+function showSynonymFinder() {
+    showNotification('Synonym Finder feature coming soon!', 'info');
+}
+
+/**
+ * Show word suggestor
+ */
+function showWordSuggestor() {
+    const randomCategory = Object.keys(WORD_BANKS)[Math.floor(Math.random() * Object.keys(WORD_BANKS).length)];
+    const randomWords = WORD_BANKS[randomCategory].slice(0, 5);
+    
     const content = `
         <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Word Suggestions</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Random words from "${randomCategory}" category:</p>
+            <div class="flex flex-wrap gap-2">
+                ${randomWords.map(word => `
+                    <span class="px-3 py-1 bg-primary text-white rounded cursor-pointer hover:bg-primary-dark transition-colors"
+                          onclick="insertRhymeWord('${word}')">${word}</span>
+                `).join('')}
+            </div>
+            <button onclick="showWordSuggestor()" class="w-full bg-secondary hover:bg-secondary-dark text-white py-2 rounded transition-colors">
+                Get New Suggestions
+            </button>
+        </div>
+    `;
+    
+    showModal('Word Suggestions', content);
+}
+
+/**
+ * Show syllable counter
+ */
+function showSyllableCounter() {
+    const content = `
+        <div class="space-y-4">
+            <h3 class="text-lg font-semibold">Syllable Counter</h3>
             <div>
-                <label class="block text-sm font-medium mb-1">What do you need help with?</label>
-                <textarea id="generalAiPrompt" placeholder="e.g., Give me ideas for a song about friendship, help me write a catchy chorus..." 
-                         class="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 resize-none text-base"></textarea>
+                <input type="text" id="syllableInput" placeholder="Enter word or phrase..." 
+                       class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
             </div>
-            
-            <div class="flex space-x-3">
-                <button onclick="requestGeneralAIHelp()" 
-                        class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
-                    <i data-lucide="sparkles" class="w-4 h-4 mr-2 inline"></i>
-                    Get AI Help
-                </button>
-                <button onclick="closeModal()" 
-                        class="flex-1 bg-gray-500 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition-colors">
-                    Cancel
-                </button>
+            <div id="syllableResult" class="p-3 bg-light-bg dark:bg-dark-bg rounded-lg hidden">
+                <!-- Results will appear here -->
             </div>
-            
-            <div id="generalAiResponse" class="hidden">
-                <label class="block text-sm font-medium mb-1">AI Response:</label>
-                <div id="generalAiContent" class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm max-h-48 overflow-y-auto custom-scrollbar whitespace-pre-wrap"></div>
-                <div class="mt-3">
-                    <button onclick="copyGeneralAIResponse()" 
-                            class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
-                        Copy to Clipboard
-                    </button>
-                </div>
+            <button onclick="countSyllables()" class="w-full bg-primary hover:bg-primary-dark text-white py-2 rounded transition-colors">
+                Count Syllables
+            </button>
+        </div>
+    `;
+    
+    showModal('Syllable Counter', content);
+}
+
+/**
+ * Count syllables (basic implementation)
+ */
+function countSyllables() {
+    const input = document.getElementById('syllableInput');
+    const result = document.getElementById('syllableResult');
+    
+    if (!input || !result) return;
+    
+    const text = input.value.trim();
+    if (!text) {
+        showNotification('Please enter a word or phrase', 'error');
+        return;
+    }
+    
+    const words = text.split(/\s+/);
+    let totalSyllables = 0;
+    const wordResults = [];
+    
+    words.forEach(word => {
+        const syllables = countWordSyllables(word);
+        totalSyllables += syllables;
+        wordResults.push({ word, syllables });
+    });
+    
+    result.innerHTML = `
+        <div class="space-y-2">
+            <div class="font-medium">Total Syllables: ${totalSyllables}</div>
+            <div class="text-sm space-y-1">
+                ${wordResults.map(({ word, syllables }) => 
+                    `<div class="flex justify-between">
+                        <span>${word}</span>
+                        <span>${syllables} syllable${syllables !== 1 ? 's' : ''}</span>
+                    </div>`
+                ).join('')}
             </div>
         </div>
     `;
     
-    showModal('AI Assistant', content);
+    result.classList.remove('hidden');
 }
 
 /**
- * Request general AI help
+ * Count syllables in a word (basic implementation)
  */
-async function requestGeneralAIHelp() {
-    const promptTextarea = document.getElementById('generalAiPrompt');
+function countWordSyllables(word) {
+    // Remove non-alphabetic characters and convert to lowercase
+    word = word.toLowerCase().replace(/[^a-z]/g, '');
     
-    if (!promptTextarea || !promptTextarea.value.trim()) {
-        showNotification('Please enter a request for the AI assistant', 'error');
-        return;
-    }
+    if (word.length === 0) return 0;
+    if (word.length <= 3) return 1;
     
-    const prompt = promptTextarea.value.trim();
-    const responseDiv = document.getElementById('generalAiResponse');
-    const contentDiv = document.getElementById('generalAiContent');
+    // Count vowel groups
+    const vowels = 'aeiouy';
+    let syllableCount = 0;
+    let previousWasVowel = false;
     
-    responseDiv.classList.remove('hidden');
-    contentDiv.innerHTML = '<div class="flex items-center"><div class="spinner mr-3"></div>Generating response...</div>';
-    
-    try {
-        const aiPrompt = `You are a professional songwriter and lyricist. Help with this request: ${prompt}\n\nProvide creative, professional advice and suggestions for songwriting.`;
+    for (let i = 0; i < word.length; i++) {
+        const isVowel = vowels.includes(word[i]);
         
-        await window.Poe.sendUserMessage(`@Claude-Sonnet-4 ${aiPrompt}`, {
-            handler: 'lyrics-idea-generator',
-            stream: true,
-            openChat: false
-        });
+        if (isVowel && !previousWasVowel) {
+            syllableCount++;
+        }
         
-    } catch (error) {
-        contentDiv.textContent = 'Error generating response. Please try again.';
-        handleError(error, 'General AI assistance request');
+        previousWasVowel = isVowel;
     }
+    
+    // Handle silent 'e'
+    if (word.endsWith('e') && syllableCount > 1) {
+        syllableCount--;
+    }
+    
+    // Ensure at least 1 syllable
+    return Math.max(1, syllableCount);
 }
 
 /**
- * Handle idea generator response
+ * Show import dialog
  */
-function handleIdeaGeneratorResponse(result, context) {
-    const contentDiv = document.getElementById('generalAiContent');
-    if (!contentDiv) return;
-    
-    const msg = result.responses[0];
-    if (msg.status === 'error') {
-        contentDiv.textContent = 'Error: ' + msg.statusText;
-    } else if (msg.status === 'incomplete') {
-        contentDiv.textContent = msg.content;
-    } else if (msg.status === 'complete') {
-        contentDiv.textContent = msg.content;
-        window.SongForge.lyrics.lastGeneralResponse = msg.content;
-    }
+function showImportDialog() {
+    loadImportableProjects();
+    showNotification('Import feature loaded in sidebar', 'info');
 }
 
-/**
- * Copy general AI response to clipboard
- */
-function copyGeneralAIResponse() {
-    const response = window.SongForge.lyrics.lastGeneralResponse;
-    if (!response) return;
-    
-    navigator.clipboard.writeText(response).then(() => {
-        showNotification('Response copied to clipboard', 'success');
-    }).catch(() => {
-        showNotification('Failed to copy to clipboard', 'error');
-    });
-}
-
-// =========================================
-// INITIALIZATION
-// =========================================
-
-// Initialize lyrics system when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeLyrics);
-} else {
-    initializeLyrics();
-}
+//
