@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SongForge - Ultimate Track Creation Assistant</title>
+    
+    <!-- External Dependencies -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#5D5CDE">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#5D5CDE',
+                        'primary-dark': '#4B4ACF',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-sans transition-colors duration-300">
+    <!-- Navigation -->
+    <nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gradient-to-r from-primary to-purple-500 rounded-lg flex items-center justify-center">
+                        <i data-lucide="music" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <h1 class="text-xl font-bold gradient-bg bg-clip-text text-transparent">SongForge</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button id="newProjectBtn" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors">
+                        <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i>
+                        New Project
+                    </button>
+                    <button id="themeToggle" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        <i data-lucide="sun" class="w-5 h-5 dark:hidden"></i>
+                        <i data-lucide="moon" class="w-5 h-5 hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Welcome Screen -->
+        <div id="welcomeScreen" class="text-center py-20 fade-in">
+            <div class="mb-8">
+                <div class="w-24 h-24 bg-gradient-to-r from-primary to-purple-500 rounded-full mx-auto mb-6 flex items-center justify-center">
+                    <i data-lucide="music" class="w-12 h-12 text-white"></i>
+                </div>
+                <h2 class="text-4xl font-bold mb-4">Welcome to SongForge</h2>
+                <p class="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                    The ultimate web app for artists to document, manage, and execute every step of the track creation process.
+                </p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-8">
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl">
+                    <i data-lucide="check-circle" class="w-8 h-8 text-primary mb-4 mx-auto"></i>
+                    <h3 class="font-semibold mb-2">Track Workflow</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Manage every step from idea to release</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl">
+                    <i data-lucide="mic" class="w-8 h-8 text-primary mb-4 mx-auto"></i>
+                    <h3 class="font-semibold mb-2">Audio Recording</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">Record vocals and import beats</p>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800 p-6 rounded-xl">
+                    <i data-lucide="pen-tool" class="w-8 h-8 text-primary mb-4 mx-auto"></i>
+                    <h3 class="font-semibold mb-2">Lyrics Assistant</h3>
+                    <p class="text-gray-600 dark:text-gray-400 text-sm">AI-powered writing tools</p>
+                </div>
+            </div>
+            <button id="startBtn" class="bg-primary hover:bg-primary-dark text-white px-8 py-3 rounded-lg text-lg font-semibold transition-colors">
+                Start Creating
+            </button>
+        </div>
+
+        <!-- Project Interface -->
+        <div id="projectInterface" class="hidden">
+            <!-- Project Header -->
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6 mb-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                    <div>
+                        <input id="projectTitle" type="text" placeholder="Untitled Project" class="text-2xl font-bold bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-primary rounded px-2 py-1 text-base md:text-2xl">
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">Created <span id="projectDate"></span></p>
+                    </div>
+                    <div class="flex items-center space-x-2 mt-4 md:mt-0">
+                        <button id="saveBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i data-lucide="save" class="w-4 h-4 mr-2 inline"></i>
+                            Save
+                        </button>
+                        <button id="exportBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i data-lucide="download" class="w-4 h-4 mr-2 inline"></i>
+                            Export
+                        </button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Artist</label>
+                        <input id="artistName" type="text" placeholder="Artist Name" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Genre</label>
+                        <input id="genre" type="text" placeholder="Hip-Hop, R&B, Pop..." class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">BPM</label>
+                        <input id="bpm" type="number" placeholder="120" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Key</label>
+                        <input id="key" type="text" placeholder="C Major" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex flex-wrap border-b border-gray-200 dark:border-gray-700 mb-6">
+                <button class="tab-btn active px-4 py-2 font-medium text-primary border-b-2 border-primary" data-tab="workflow">
+                    <i data-lucide="list-checks" class="w-4 h-4 mr-2 inline"></i>
+                    Workflow
+                </button>
+                <button class="tab-btn px-4 py-2 font-medium text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" data-tab="lyrics">
+                    <i data-lucide="pen-tool" class="w-4 h-4 mr-2 inline"></i>
+                    Lyrics
+                </button>
+                <button class="tab-btn px-4 py-2 font-medium text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" data-tab="audio">
+                    <i data-lucide="headphones" class="w-4 h-4 mr-2 inline"></i>
+                    Audio
+                </button>
+                <button class="tab-btn px-4 py-2 font-medium text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" data-tab="artwork">
+                    <i data-lucide="image" class="w-4 h-4 mr-2 inline"></i>
+                    Artwork
+                </button>
+                <button class="tab-btn px-4 py-2 font-medium text-gray-600 dark:text-gray-400 hover:text-primary transition-colors" data-tab="release">
+                    <i data-lucide="rocket" class="w-4 h-4 mr-2 inline"></i>
+                    Release
+                </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="workflowTab" class="tab-content">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Track Creation Workflow</h3>
+                        <div id="workflowSteps" class="space-y-3">
+                            <!-- Workflow steps will be dynamically generated -->
+                        </div>
+                        <button id="addStepBtn" class="mt-4 text-primary hover:text-primary-dark transition-colors">
+                            <i data-lucide="plus" class="w-4 h-4 mr-2 inline"></i>
+                            Add Custom Step
+                        </button>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Project Notes</h3>
+                        <textarea id="projectNotes" placeholder="Add notes, ideas, inspiration, or any thoughts about this track..." class="w-full h-64 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 resize-none custom-scrollbar text-base"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div id="lyricsTab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2">
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-lg font-semibold">Lyrics Editor</h3>
+                                <div class="flex space-x-2">
+                                    <button id="addSectionBtn" class="text-primary hover:text-primary-dark transition-colors">
+                                        <i data-lucide="plus" class="w-4 h-4 mr-1 inline"></i>
+                                        Add Section
+                                    </button>
+                                    <button id="aiAssistBtn" class="bg-primary hover:bg-primary-dark text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i data-lucide="sparkles" class="w-3 h-3 mr-1 inline"></i>
+                                        AI Assist
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="lyricsSections" class="space-y-4">
+                                <!-- Lyrics sections will be dynamically generated -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">AI Tools</h3>
+                            <div class="space-y-3">
+                                <button id="rhymeBtn" class="w-full text-left p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <i data-lucide="music" class="w-4 h-4 mr-2 inline text-primary"></i>
+                                    Find Rhymes
+                                </button>
+                                <button id="synonymBtn" class="w-full text-left p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <i data-lucide="book-open" class="w-4 h-4 mr-2 inline text-primary"></i>
+                                    Synonyms
+                                </button>
+                                <button id="ideaBtn" class="w-full text-left p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <i data-lucide="lightbulb" class="w-4 h-4 mr-2 inline text-primary"></i>
+                                    Song Ideas
+                                </button>
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                            <h3 class="text-lg font-semibold mb-4">Export Lyrics</h3>
+                            <div class="space-y-2">
+                                <button id="exportTxtBtn" class="w-full text-left p-2 text-sm bg-white dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <i data-lucide="file-text" class="w-3 h-3 mr-2 inline"></i>
+                                    Plain Text
+                                </button>
+                                <button id="exportMdBtn" class="w-full text-left p-2 text-sm bg-white dark:bg-gray-700 rounded hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                    <i data-lucide="file-code" class="w-3 h-3 mr-2 inline"></i>
+                                    Markdown
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="audioTab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Beat Import</h3>
+                        <div id="beatDropZone" class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
+                            <i data-lucide="upload" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
+                            <p class="text-gray-600 dark:text-gray-400 mb-2">Drag & drop your beat here or click to browse</p>
+                            <p class="text-sm text-gray-500">Supports MP3, WAV files up to 150MB</p>
+                            <input type="file" id="beatInput" accept="audio/*" class="hidden">
+                        </div>
+                        <div id="beatInfo" class="mt-4 hidden">
+                            <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-700 rounded-lg">
+                                <div class="flex items-center">
+                                    <i data-lucide="music" class="w-4 h-4 mr-2 text-primary"></i>
+                                    <span id="beatName"></span>
+                                </div>
+                                <button id="removeBeatBtn" class="text-red-500 hover:text-red-600">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Vocal Recording</h3>
+                        <div class="text-center mb-4">
+                            <button id="recordBtn" class="w-16 h-16 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center transition-colors mx-auto mb-4">
+                                <i data-lucide="mic" class="w-6 h-6"></i>
+                            </button>
+                            <p id="recordStatus" class="text-gray-600 dark:text-gray-400">Click to start recording</p>
+                        </div>
+                        <div id="recordingsList" class="space-y-2">
+                            <!-- Recorded audio files will appear here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-6 bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                    <h3 class="text-lg font-semibold mb-4">Audio Mixer</h3>
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="text-center">
+                            <label class="block text-sm font-medium mb-2">Beat Volume</label>
+                            <input type="range" id="beatVolume" min="0" max="100" value="70" class="w-full mb-2">
+                            <div class="flex justify-center space-x-4">
+                                <button id="muteBeat" class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                    <i data-lucide="volume-x" class="w-3 h-3 mr-1 inline"></i>
+                                    Mute
+                                </button>
+                                <button id="soloBeat" class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                    <i data-lucide="headphones" class="w-3 h-3 mr-1 inline"></i>
+                                    Solo
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-sm font-medium mb-2">Vocal Volume</label>
+                            <input type="range" id="vocalVolume" min="0" max="100" value="80" class="w-full mb-2">
+                            <div class="flex justify-center space-x-4">
+                                <button id="muteVocal" class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                    <i data-lucide="volume-x" class="w-3 h-3 mr-1 inline"></i>
+                                    Mute
+                                </button>
+                                <button id="soloVocal" class="px-3 py-1 bg-gray-200 dark:bg-gray-600 rounded text-sm hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                                    <i data-lucide="headphones" class="w-3 h-3 mr-1 inline"></i>
+                                    Solo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-center space-x-4">
+                        <button id="playBtn" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors">
+                            <i data-lucide="play" class="w-4 h-4 mr-2 inline"></i>
+                            Play
+                        </button>
+                        <button id="pauseBtn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i data-lucide="pause" class="w-4 h-4 mr-2 inline"></i>
+                            Pause
+                        </button>
+                        <button id="stopBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i data-lucide="square" class="w-4 h-4 mr-2 inline"></i>
+                            Stop
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="artworkTab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Album Artwork</h3>
+                        <div id="artworkPreview" class="aspect-square bg-gray-200 dark:bg-gray-700 rounded-lg mb-4 flex items-center justify-center">
+                            <div class="text-center text-gray-500">
+                                <i data-lucide="image" class="w-12 h-12 mx-auto mb-2"></i>
+                                <p>No artwork uploaded</p>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="uploadArtBtn" class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors">
+                                <i data-lucide="upload" class="w-4 h-4 mr-2 inline"></i>
+                                Upload Image
+                            </button>
+                            <button id="generateArtBtn" class="flex-1 bg-primary hover:bg-primary-dark text-white py-2 px-4 rounded-lg transition-colors">
+                                <i data-lucide="sparkles" class="w-4 h-4 mr-2 inline"></i>
+                                AI Generate
+                            </button>
+                        </div>
+                        <input type="file" id="artworkInput" accept="image/*" class="hidden">
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Artwork Guidelines</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex items-start">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>Minimum 3000x3000px for optimal quality</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>Square aspect ratio (1:1)</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>RGB color mode</span>
+                            </div>
+                            <div class="flex items-start">
+                                <i data-lucide="check" class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0"></i>
+                                <span>JPEG or PNG format</span>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="font-medium mb-2">AI Generation Prompt</h4>
+                            <textarea id="artPrompt" placeholder="Describe the artwork you want to generate..." class="w-full h-24 p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 resize-none text-base"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="releaseTab" class="tab-content hidden">
+                <div class="grid lg:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Release Checklist</h3>
+                        <div id="releaseSteps" class="space-y-3">
+                            <!-- Release steps will be dynamically generated -->
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-xl p-6">
+                        <h3 class="text-lg font-semibold mb-4">Distribution Platforms</h3>
+                        <div class="space-y-3">
+                            <a href="https://distrokid.com" target="_blank" class="block p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-medium">DistroKid</span>
+                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Fast distribution to all major platforms</p>
+                            </a>
+                            <a href="https://www.tunecore.com" target="_blank" class="block p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-medium">TuneCore</span>
+                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Keep 100% of your royalties</p>
+                            </a>
+                            <a href="https://cdbaby.com" target="_blank" class="block p-3 bg-white dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-medium">CD Baby</span>
+                                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-400">Comprehensive music services</p>
+                            </div>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="font-medium mb-2">Release Date</h4>
+                            <input type="date" id="releaseDate" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-base">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div id="modalContent" class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto custom-scrollbar">
+            <!-- Modal content will be dynamically inserted -->
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <span>Processing...</span>
+        </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/utils.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            initializeApp();
+        });
+    </script>
+</body>
+</html>
