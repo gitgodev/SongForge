@@ -75,7 +75,9 @@ function initializeEnhancedApp() {
         console.log('Initializing Enhanced SongForge...');
         
         // Initialize subsystems
-        initializeAuth();
+        if (typeof initializeAuth === 'function') {
+            initializeAuth();
+        }
         setupEnhancedEventListeners();
         setupAutoSave();
         setupKeyboardShortcuts();
@@ -91,7 +93,9 @@ function initializeEnhancedApp() {
         
     } catch (error) {
         console.error('Enhanced app initialization error:', error);
-        handleError(error, 'Application initialization');
+        if (typeof handleError === 'function') {
+            handleError(error, 'Application initialization');
+        }
     }
 }
 
@@ -104,15 +108,26 @@ function setupEnhancedEventListeners() {
     setupProjectListeners();
     setupTabListeners();
     setupMobileMenuListeners();
-    setupAuthEventListeners();
+    
+    if (typeof setupAuthEventListeners === 'function') {
+        setupAuthEventListeners();
+    }
     
     // Import/Export
     setupImportExportListeners();
     
     // Window events
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('online', () => showNotification('Back online', 'success', 2000));
-    window.addEventListener('offline', () => showNotification('You are offline', 'info', 3000));
+    window.addEventListener('online', () => {
+        if (typeof showNotification === 'function') {
+            showNotification('Back online', 'success', 2000);
+        }
+    });
+    window.addEventListener('offline', () => {
+        if (typeof showNotification === 'function') {
+            showNotification('You are offline', 'info', 3000);
+        }
+    });
 }
 
 /**
@@ -168,9 +183,9 @@ function setupProjectListeners() {
     inputs.forEach(({ id, property }) => {
         const element = document.getElementById(id);
         if (element) {
-            const handler = debounce((e) => {
-                updateProjectProperty(property, e.target.value);
-            }, 300);
+            const handler = typeof debounce === 'function' ? 
+                debounce((e) => updateProjectProperty(property, e.target.value), 300) :
+                (e) => updateProjectProperty(property, e.target.value);
             element.addEventListener('input', handler);
         }
     });
@@ -214,12 +229,37 @@ function setupMobileMenuListeners() {
     }
     
     if (mobileThemeToggle) {
-        mobileThemeToggle.addEventListener('click', toggleDarkMode);
+        mobileThemeToggle.addEventListener('click', typeof toggleDarkMode === 'function' ? toggleDarkMode : toggleTheme);
     }
     
     if (themeToggle) {
-        themeToggle.addEventListener('click', toggleDarkMode);
+        themeToggle.addEventListener('click', typeof toggleDarkMode === 'function' ? toggleDarkMode : toggleTheme);
     }
+}
+
+/**
+ * Basic theme toggle fallback
+ */
+function toggleTheme() {
+    document.documentElement.classList.toggle('dark');
+    updateThemeIcon();
+}
+
+/**
+ * Update theme icon
+ */
+function updateThemeIcon() {
+    const isDark = document.documentElement.classList.contains('dark');
+    const sunIcons = document.querySelectorAll('[data-lucide="sun"]');
+    const moonIcons = document.querySelectorAll('[data-lucide="moon"]');
+    
+    sunIcons.forEach(icon => {
+        icon.style.display = isDark ? 'none' : 'inline';
+    });
+    
+    moonIcons.forEach(icon => {
+        icon.style.display = isDark ? 'inline' : 'none';
+    });
 }
 
 /**
@@ -317,16 +357,18 @@ function hideAllScreens() {
  */
 function createNewProject() {
     const newProject = {
-        ...deepClone(DEFAULT_PROJECT),
-        id: generateId(),
-        workflow: deepClone(DEFAULT_WORKFLOW),
-        release: deepClone(DEFAULT_RELEASE),
+        ...deepClone ? deepClone(DEFAULT_PROJECT) : { ...DEFAULT_PROJECT },
+        id: typeof generateId === 'function' ? generateId() : Date.now().toString(36),
+        workflow: deepClone ? deepClone(DEFAULT_WORKFLOW) : [...DEFAULT_WORKFLOW],
+        release: deepClone ? deepClone(DEFAULT_RELEASE) : [...DEFAULT_RELEASE],
         createdDate: new Date().toLocaleDateString()
     };
     
     setCurrentProject(newProject);
     showProjectInterface();
-    showNotification('New project created', 'success');
+    if (typeof showNotification === 'function') {
+        showNotification('New project created', 'success');
+    }
 }
 
 /**
@@ -334,13 +376,14 @@ function createNewProject() {
  */
 function loadOrCreateProject() {
     // Try to load the last project
-    const lastProject = loadFromStorage('current-project');
+    const lastProject = typeof loadFromStorage === 'function' ? 
+        loadFromStorage('current-project') : null;
     
     if (lastProject && lastProject.id) {
         setCurrentProject(lastProject);
     } else {
         // No existing project, show dashboard or welcome
-        if (window.SongForge.auth.isLoggedIn) {
+        if (window.SongForge.auth && window.SongForge.auth.isLoggedIn) {
             showDashboard();
         } else {
             showWelcomeScreen();
@@ -424,19 +467,27 @@ function saveCurrentProject() {
     
     try {
         // Save to local storage
-        saveToStorage('current-project', window.SongForge.app.currentProject);
+        if (typeof saveToStorage === 'function') {
+            saveToStorage('current-project', window.SongForge.app.currentProject);
+        }
         
         // Save to user's project list if logged in
-        if (window.SongForge.auth.isLoggedIn) {
+        if (window.SongForge.auth && window.SongForge.auth.isLoggedIn && typeof saveProjectForUser === 'function') {
             saveProjectForUser(window.SongForge.app.currentProject);
         }
         
         markProjectSaved();
-        showNotification('Project saved successfully', 'success');
+        if (typeof showNotification === 'function') {
+            showNotification('Project saved successfully', 'success');
+        }
         
     } catch (error) {
-        handleError(error, 'Project save');
-        showNotification('Failed to save project', 'error');
+        if (typeof handleError === 'function') {
+            handleError(error, 'Project save');
+        }
+        if (typeof showNotification === 'function') {
+            showNotification('Failed to save project', 'error');
+        }
     }
 }
 
@@ -477,7 +528,7 @@ function saveToHistory(project) {
     if (!project) return;
     
     const history = window.SongForge.app.projectHistory;
-    const clone = deepClone(project);
+    const clone = typeof deepClone === 'function' ? deepClone(project) : JSON.parse(JSON.stringify(project));
     
     // Remove future history if we're not at the end
     if (window.SongForge.app.historyIndex < history.length - 1) {
@@ -508,11 +559,14 @@ function undoLastChange() {
         const previousState = history[window.SongForge.app.historyIndex];
         
         // Restore without creating new history entry
-        window.SongForge.app.currentProject = deepClone(previousState);
+        window.SongForge.app.currentProject = typeof deepClone === 'function' ? 
+            deepClone(previousState) : JSON.parse(JSON.stringify(previousState));
         updateProjectUI();
         updateUndoButton();
         
-        showNotification('Change undone', 'info');
+        if (typeof showNotification === 'function') {
+            showNotification('Change undone', 'info');
+        }
     }
 }
 
@@ -548,13 +602,13 @@ function switchToTab(tabName) {
     // Update button states
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active', 'text-primary', 'border-b-2', 'border-primary');
-        btn.classList.add('text-gray-600', 'dark:text-gray-400');
+        btn.classList.add('text-light-text-muted', 'dark:text-dark-text-muted');
     });
     
     const activeBtn = document.querySelector(`[data-tab="${tabName}"]`);
     if (activeBtn) {
         activeBtn.classList.add('active', 'text-primary', 'border-b-2', 'border-primary');
-        activeBtn.classList.remove('text-gray-600', 'dark:text-gray-400');
+        activeBtn.classList.remove('text-light-text-muted', 'dark:text-dark-text-muted');
     }
     
     window.SongForge.app.currentTab = tabName;
@@ -578,24 +632,29 @@ function loadTabContent(tabName) {
     
     // Load content based on tab
     setTimeout(() => {
-        switch (tabName) {
-            case 'workflow':
-                loadWorkflowContent();
-                break;
-            case 'lyrics':
-                loadLyricsContent();
-                break;
-            case 'beats':
-                loadBeatsContent();
-                break;
-            case 'artwork':
-                loadArtworkContent();
-                break;
-            case 'release':
-                loadReleaseContent();
-                break;
-            default:
-                tabContent.innerHTML = '<p class="text-center py-8">Tab content not found</p>';
+        try {
+            switch (tabName) {
+                case 'workflow':
+                    loadWorkflowContent();
+                    break;
+                case 'lyrics':
+                    loadLyricsContent();
+                    break;
+                case 'beats':
+                    loadBeatsContent();
+                    break;
+                case 'artwork':
+                    loadArtworkContent();
+                    break;
+                case 'release':
+                    loadReleaseContent();
+                    break;
+                default:
+                    tabContent.innerHTML = '<p class="text-center py-8">Tab content not found</p>';
+            }
+        } catch (error) {
+            console.error('Error loading tab content:', error);
+            tabContent.innerHTML = '<p class="text-center py-8 text-red-500">Error loading content</p>';
         }
     }, 100);
 }
@@ -639,9 +698,10 @@ function loadWorkflowContent() {
     const projectNotes = document.getElementById('projectNotes');
     if (projectNotes && window.SongForge.app.currentProject) {
         projectNotes.value = window.SongForge.app.currentProject.notes || '';
-        projectNotes.addEventListener('input', debounce((e) => {
-            updateProjectProperty('notes', e.target.value);
-        }, 300));
+        const handler = typeof debounce === 'function' ? 
+            debounce((e) => updateProjectProperty('notes', e.target.value), 300) :
+            (e) => updateProjectProperty('notes', e.target.value);
+        projectNotes.addEventListener('input', handler);
     }
     
     // Setup add step button
@@ -654,53 +714,149 @@ function loadWorkflowContent() {
 }
 
 /**
- * Load lyrics content
+ * Load lyrics content - FIXED TO PREVENT RECURSION
  */
 function loadLyricsContent() {
     const tabContent = document.getElementById('tabContent');
     if (!tabContent) return;
     
-    tabContent.innerHTML = `<div class="text-center py-8">Loading lyrics editor...</div>`;
-    
-    // Initialize enhanced lyrics if available
-    if (typeof loadEnhancedLyricsContent === 'function') {
-        loadEnhancedLyricsContent();
-    } else {
-        tabContent.innerHTML = `<div class="text-center py-8 text-gray-500">Lyrics editor not available</div>`;
+    try {
+        // Check if enhanced lyrics is available
+        if (typeof loadEnhancedLyricsContent === 'function') {
+            loadEnhancedLyricsContent();
+        } else {
+            // Fallback lyrics interface
+            tabContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                        <h3 class="text-lg font-semibold mb-4">Lyrics Editor</h3>
+                        <textarea id="basicLyrics" placeholder="Write your lyrics here..." 
+                                 class="w-full h-96 p-4 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-bg dark:bg-dark-bg resize-none text-base font-mono"></textarea>
+                        <div class="mt-4 flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                <span id="lyricsWordCount">0 words</span> • 
+                                <span id="lyricsLineCount">0 lines</span>
+                            </div>
+                            <button id="saveLyrics" class="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg">
+                                Save Lyrics
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Setup basic lyrics functionality
+            const basicLyrics = document.getElementById('basicLyrics');
+            const wordCount = document.getElementById('lyricsWordCount');
+            const lineCount = document.getElementById('lyricsLineCount');
+            
+            if (basicLyrics) {
+                basicLyrics.addEventListener('input', () => {
+                    const text = basicLyrics.value;
+                    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+                    const lines = text.split('\n').length;
+                    
+                    if (wordCount) wordCount.textContent = `${words} words`;
+                    if (lineCount) lineCount.textContent = `${lines} lines`;
+                });
+            }
+        }
+    } catch (error) {
+        console.error('Error loading lyrics content:', error);
+        tabContent.innerHTML = '<p class="text-center py-8 text-red-500">Error loading lyrics editor</p>';
     }
 }
 
 /**
- * Load beats content
+ * Load beats content - FIXED TO PREVENT RECURSION
  */
 function loadBeatsContent() {
     const tabContent = document.getElementById('tabContent');
     if (!tabContent) return;
     
-    tabContent.innerHTML = `<div class="text-center py-8">Loading beats section...</div>`;
-    
-    // Initialize beats if available
-    if (typeof loadBeatsContent === 'function') {
-        loadBeatsContent();
-    } else {
-        tabContent.innerHTML = `<div class="text-center py-8 text-gray-500">Beats section not available</div>`;
+    try {
+        // Check if beats system is available
+        if (typeof loadBeatsInterface === 'function') {
+            loadBeatsInterface();
+        } else {
+            // Fallback beats interface
+            tabContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                        <h3 class="text-lg font-semibold mb-4">Beat Management</h3>
+                        <div class="text-center py-8">
+                            <i data-lucide="music" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h4 class="text-lg font-medium mb-2">No Beat Loaded</h4>
+                            <p class="text-gray-500 mb-6">Upload or select a beat to get started</p>
+                            <div class="space-y-3">
+                                <button class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-lg">
+                                    <i data-lucide="upload" class="w-4 h-4 mr-2 inline"></i>
+                                    Upload Beat
+                                </button>
+                                <div class="text-sm text-gray-500">
+                                    Supports MP3, WAV, and other audio formats
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+    } catch (error) {
+        console.error('Error loading beats content:', error);
+        tabContent.innerHTML = '<p class="text-center py-8 text-red-500">Error loading beats section</p>';
     }
 }
 
 /**
- * Load artwork content
+ * Load artwork content - FIXED TO PREVENT ERRORS
  */
 function loadArtworkContent() {
     const tabContent = document.getElementById('tabContent');
     if (!tabContent) return;
     
-    tabContent.innerHTML = `<div class="text-center py-8">Loading artwork tools...</div>`;
-    
-    // Initialize AI artwork if available
-    if (typeof loadArtworkAIContent === 'function') {
-        loadArtworkAIContent();
-    } else {
-        tabContent.innerHTML = `<div class="text-center py-8 text-gray-500">Artwork tools not available</div>`;
+    try {
+        // Check if artwork AI is available
+        if (typeof loadArtworkContent === 'function' && loadArtworkContent !== arguments.callee) {
+            // Call the external function if it exists and isn't this function
+            const content = loadArtworkContent();
+            if (content) {
+                tabContent.innerHTML = content;
+            }
+        } else {
+            // Fallback artwork interface
+            tabContent.innerHTML = `
+                <div class="space-y-6">
+                    <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
+                        <h3 class="text-lg font-semibold mb-4">Album Artwork</h3>
+                        <div class="text-center py-8">
+                            <i data-lucide="image" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+                            <h4 class="text-lg font-medium mb-2">Create Album Art</h4>
+                            <p class="text-gray-500 mb-6">Generate or upload artwork for your track</p>
+                            <div class="space-y-3">
+                                <button class="bg-primary hover:bg-primary-dark text-white px-6 py-3 rounded-lg">
+                                    <i data-lucide="palette" class="w-4 h-4 mr-2 inline"></i>
+                                    Generate AI Artwork
+                                </button>
+                                <button class="bg-secondary hover:bg-secondary-dark text-white px-6 py-3 rounded-lg">
+                                    <i data-lucide="upload" class="w-4 h-4 mr-2 inline"></i>
+                                    Upload Custom Art
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        
+    } catch (error) {
+        console.error('Error loading artwork content:', error);
+        tabContent.innerHTML = '<p class="text-center py-8 text-red-500">Error loading artwork tools</p>';
     }
 }
 
@@ -775,7 +931,9 @@ function handleProjectImport(event) {
     if (!file) return;
     
     if (!file.type.includes('json')) {
-        showNotification('Please select a valid JSON project file', 'error');
+        if (typeof showNotification === 'function') {
+            showNotification('Please select a valid JSON project file', 'error');
+        }
         return;
     }
     
@@ -792,11 +950,15 @@ function handleProjectImport(event) {
             // Set as current project
             setCurrentProject(projectData);
             showProjectInterface();
-            showNotification('Project imported successfully', 'success');
+            if (typeof showNotification === 'function') {
+                showNotification('Project imported successfully', 'success');
+            }
             
         } catch (error) {
             console.error('Import error:', error);
-            showNotification('Failed to import project: Invalid file format', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Failed to import project: Invalid file format', 'error');
+            }
         }
     };
     
@@ -811,7 +973,9 @@ function handleProjectImport(event) {
  */
 function showExportOptions() {
     if (!window.SongForge.app.currentProject) {
-        showNotification('No project to export', 'error');
+        if (typeof showNotification === 'function') {
+            showNotification('No project to export', 'error');
+        }
         return;
     }
     
@@ -847,7 +1011,9 @@ function showExportOptions() {
         </div>
     `;
     
-    showModal('Export Options', content);
+    if (typeof showModal === 'function') {
+        showModal('Export Options', content);
+    }
 }
 
 /**
@@ -866,7 +1032,9 @@ function executeProjectExport() {
             ...project,
             exportDate: new Date().toISOString()
         };
-        downloadFile(JSON.stringify(projectData, null, 2), `${filename}.json`, 'application/json');
+        if (typeof downloadFile === 'function') {
+            downloadFile(JSON.stringify(projectData, null, 2), `${filename}.json`, 'application/json');
+        }
     }
     
     if (exportLyrics && project.lyrics && project.lyrics.length > 0) {
@@ -879,7 +1047,9 @@ function executeProjectExport() {
             }
         });
         
-        downloadFile(lyricsContent, `${filename}-lyrics.txt`, 'text/plain');
+        if (typeof downloadFile === 'function') {
+            downloadFile(lyricsContent, `${filename}-lyrics.txt`, 'text/plain');
+        }
     }
     
     if (exportWorkflow && project.workflow && project.workflow.length > 0) {
@@ -894,11 +1064,17 @@ function executeProjectExport() {
             workflowContent += '\n';
         });
         
-        downloadFile(workflowContent, `${filename}-workflow.txt`, 'text/plain');
+        if (typeof downloadFile === 'function') {
+            downloadFile(workflowContent, `${filename}-workflow.txt`, 'text/plain');
+        }
     }
     
-    closeModal();
-    showNotification('Export completed', 'success');
+    if (typeof closeModal === 'function') {
+        closeModal();
+    }
+    if (typeof showNotification === 'function') {
+        showNotification('Export completed', 'success');
+    }
 }
 
 // =========================================
@@ -912,7 +1088,7 @@ function loadRecentProjects() {
     const container = document.getElementById('recentProjectsList');
     if (!container) return;
     
-    const projects = getProjectsForUser();
+    const projects = typeof getProjectsForUser === 'function' ? getProjectsForUser() : [];
     
     if (projects.length === 0) {
         container.innerHTML = `
@@ -954,15 +1130,19 @@ function loadRecentProjects() {
  * Load specific project
  */
 function loadProject(projectId) {
-    const projects = getProjectsForUser();
+    const projects = typeof getProjectsForUser === 'function' ? getProjectsForUser() : [];
     const project = projects.find(p => p.id === projectId);
     
     if (project) {
         setCurrentProject(project);
         showProjectInterface();
-        showNotification('Project loaded', 'success');
+        if (typeof showNotification === 'function') {
+            showNotification('Project loaded', 'success');
+        }
     } else {
-        showNotification('Project not found', 'error');
+        if (typeof showNotification === 'function') {
+            showNotification('Project not found', 'error');
+        }
     }
 }
 
@@ -1018,7 +1198,9 @@ function toggleWorkflowStep(stepId) {
         markProjectModified();
         
         const action = step.completed ? 'completed' : 'marked incomplete';
-        showNotification(`"${step.title}" ${action}`, 'success', 2000);
+        if (typeof showNotification === 'function') {
+            showNotification(`"${step.title}" ${action}`, 'success', 2000);
+        }
     }
 }
 
@@ -1068,7 +1250,9 @@ function editWorkflowStep(stepId) {
         </div>
     `;
     
-    showModal('Edit Step', content);
+    if (typeof showModal === 'function') {
+        showModal('Edit Step', content);
+    }
 }
 
 /**
@@ -1084,7 +1268,9 @@ function updateWorkflowStep(stepId) {
         const newTitle = titleInput.value.trim();
         
         if (!newTitle) {
-            showNotification('Step title cannot be empty', 'error');
+            if (typeof showNotification === 'function') {
+                showNotification('Step title cannot be empty', 'error');
+            }
             return;
         }
         
@@ -1096,9 +1282,13 @@ function updateWorkflowStep(stepId) {
         
         renderWorkflowSteps();
         markProjectModified();
-        closeModal();
+        if (typeof closeModal === 'function') {
+            closeModal();
+        }
         
-        showNotification('Step updated successfully', 'success');
+        if (typeof showNotification === 'function') {
+            showNotification('Step updated successfully', 'success');
+        }
     }
 }
 
@@ -1106,49 +1296,59 @@ function updateWorkflowStep(stepId) {
  * Delete workflow step
  */
 function deleteWorkflowStep(stepId) {
-    showConfirmDialog('Are you sure you want to delete this workflow step?', () => {
-        saveToHistory(window.SongForge.app.currentProject);
-        
-        window.SongForge.app.currentProject.workflow = window.SongForge.app.currentProject.workflow
-            .filter(s => s.id !== stepId);
-        
-        renderWorkflowSteps();
-        markProjectModified();
-        closeModal();
-        
-        showNotification('Workflow step deleted', 'info');
-    });
+    if (typeof showConfirmDialog === 'function') {
+        showConfirmDialog('Are you sure you want to delete this workflow step?', () => {
+            saveToHistory(window.SongForge.app.currentProject);
+            
+            window.SongForge.app.currentProject.workflow = window.SongForge.app.currentProject.workflow
+                .filter(s => s.id !== stepId);
+            
+            renderWorkflowSteps();
+            markProjectModified();
+            if (typeof closeModal === 'function') {
+                closeModal();
+            }
+            
+            if (typeof showNotification === 'function') {
+                showNotification('Workflow step deleted', 'info');
+            }
+        });
+    }
 }
 
 /**
  * Add custom workflow step
  */
 function addCustomWorkflowStep() {
-    showInputDialog(
-        'Add Custom Step',
-        'Enter step title...',
-        (title) => {
-            if (!window.SongForge.app.currentProject.workflow) {
-                window.SongForge.app.currentProject.workflow = [];
+    if (typeof showInputDialog === 'function') {
+        showInputDialog(
+            'Add Custom Step',
+            'Enter step title...',
+            (title) => {
+                if (!window.SongForge.app.currentProject.workflow) {
+                    window.SongForge.app.currentProject.workflow = [];
+                }
+                
+                saveToHistory(window.SongForge.app.currentProject);
+                
+                const newStep = {
+                    id: Math.max(...window.SongForge.app.currentProject.workflow.map(s => s.id), 0) + 1,
+                    title: title,
+                    completed: false,
+                    notes: '',
+                    order: window.SongForge.app.currentProject.workflow.length
+                };
+                
+                window.SongForge.app.currentProject.workflow.push(newStep);
+                renderWorkflowSteps();
+                markProjectModified();
+                
+                if (typeof showNotification === 'function') {
+                    showNotification('Custom step added', 'success');
+                }
             }
-            
-            saveToHistory(window.SongForge.app.currentProject);
-            
-            const newStep = {
-                id: Math.max(...window.SongForge.app.currentProject.workflow.map(s => s.id), 0) + 1,
-                title: title,
-                completed: false,
-                notes: '',
-                order: window.SongForge.app.currentProject.workflow.length
-            };
-            
-            window.SongForge.app.currentProject.workflow.push(newStep);
-            renderWorkflowSteps();
-            markProjectModified();
-            
-            showNotification('Custom step added', 'success');
-        }
-    );
+        );
+    }
 }
 
 // =========================================
@@ -1197,7 +1397,9 @@ function toggleReleaseStep(stepId) {
         markProjectModified();
         
         const action = step.completed ? 'completed' : 'marked incomplete';
-        showNotification(`Release step ${action}`, 'success', 2000);
+        if (typeof showNotification === 'function') {
+            showNotification(`Release step ${action}`, 'success', 2000);
+        }
     }
 }
 
@@ -1213,7 +1415,9 @@ function setupAutoSave() {
     window.SongForge.app.autoSaveInterval = setInterval(() => {
         if (window.SongForge.app.currentProject) {
             try {
-                saveToStorage('autosave-project', window.SongForge.app.currentProject);
+                if (typeof saveToStorage === 'function') {
+                    saveToStorage('autosave-project', window.SongForge.app.currentProject);
+                }
                 console.log('Auto-save completed');
             } catch (error) {
                 console.warn('Auto-save failed:', error);
@@ -1250,7 +1454,9 @@ function setupKeyboardShortcuts() {
         
         // Escape - Close modal
         if (e.key === 'Escape') {
-            closeModal();
+            if (typeof closeModal === 'function') {
+                closeModal();
+            }
         }
     });
 }
@@ -1261,7 +1467,9 @@ function setupKeyboardShortcuts() {
 function handleBeforeUnload(e) {
     // Save current project state
     if (window.SongForge.app.currentProject) {
-        saveToStorage('autosave-project', window.SongForge.app.currentProject);
+        if (typeof saveToStorage === 'function') {
+            saveToStorage('autosave-project', window.SongForge.app.currentProject);
+        }
     }
 }
 
@@ -1277,5 +1485,6 @@ window.deleteWorkflowStep = deleteWorkflowStep;
 window.toggleReleaseStep = toggleReleaseStep;
 window.executeProjectExport = executeProjectExport;
 window.loadProject = loadProject;
+window.initializeEnhancedApp = initializeEnhancedApp;
 
 console.log('Enhanced SongForge app initialized');
