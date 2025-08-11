@@ -67,6 +67,52 @@
     <!-- Custom Styles -->
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
+
+<script>
+// Pre-initialize SongForge to prevent undefined errors
+window.SongForge = {
+    app: {
+        currentScreen: 'welcome',
+        currentTab: 'workflow',
+        currentProject: null,
+        projectHistory: [],
+        historyIndex: -1,
+        maxHistorySize: 20,
+        initialized: false,
+        autoSaveInterval: null
+    },
+    auth: {
+        currentUser: null,
+        isLoggedIn: false,
+        users: [],
+        skipSignIn: true
+    },
+    lyricsEnhanced: {
+        sections: [],
+        currentSection: null,
+        rhymeSettings: {
+            density: 5,
+            layeredMetaphors: 3,
+            puns: 2,
+            internalRhymes: 4,
+            doubleEntendres: 2,
+            assonance: 3,
+            consonance: 3,
+            radioFriendly: true
+        },
+        combinedText: '',
+        importedProjects: []
+    },
+    audio: {
+        beatAudio: null,
+        vocalAudio: null,
+        isRecording: false,
+        isPaused: false,
+        isPlaying: false
+    }
+};
+console.log('SongForge pre-initialized safely');
+</script>
     
     <!-- Tailwind Config -->
     <script>
