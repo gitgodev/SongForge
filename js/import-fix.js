@@ -25,13 +25,7 @@ function setupEnhancedImportListeners() {
         importInput.addEventListener('change', handleEnhancedProjectImport);
     }
     
-    // Quick import buttons
-    const quickImportBtns = document.querySelectorAll('.quick-import-btn');
-    quickImportBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            triggerImport();
-        });
-    });
+    console.log('Enhanced import listeners set up');
 }
 
 /**
@@ -70,13 +64,13 @@ function handleEnhancedProjectImport(event) {
     
     // Validate file type
     if (!file.type.includes('json') && !file.name.endsWith('.json')) {
-        showSafeNotification('Please select a valid JSON project file', 'error');
+        showNotification('Please select a valid JSON project file', 'error');
         return;
     }
     
     // Check file size (10MB limit)
     if (file.size > 10 * 1024 * 1024) {
-        showSafeNotification('File size must be less than 10MB', 'error');
+        showNotification('File size must be less than 10MB', 'error');
         return;
     }
     
@@ -97,18 +91,18 @@ function handleEnhancedProjectImport(event) {
             importProjectData(projectData);
             
             hideLoadingNotification();
-            showSafeNotification('Project imported successfully!', 'success');
+            showNotification('Project imported successfully!', 'success');
             
         } catch (error) {
             console.error('Import error:', error);
             hideLoadingNotification();
-            showSafeNotification(`Failed to import project: ${error.message}`, 'error');
+            showNotification(`Failed to import project: ${error.message}`, 'error');
         }
     };
     
     reader.onerror = () => {
         hideLoadingNotification();
-        showSafeNotification('Failed to read file', 'error');
+        showNotification('Failed to read file', 'error');
     };
     
     reader.readAsText(file);
@@ -126,16 +120,13 @@ function validateProjectStructure(projectData) {
         return false;
     }
     
-    // Check for required fields
-    const requiredFields = ['id', 'title'];
-    for (const field of requiredFields) {
-        if (!(field in projectData)) {
-            console.warn(`Missing required field: ${field}`);
-            // Don't fail for missing fields, just add defaults
-            if (field === 'id') {
-                projectData.id = generateId();
-            }
-        }
+    // Check for required fields and add defaults if missing
+    if (!projectData.id) {
+        projectData.id = 'imported-' + Date.now().toString(36);
+    }
+    
+    if (!projectData.title) {
+        projectData.title = 'Imported Project';
     }
     
     // Ensure arrays exist
@@ -164,51 +155,77 @@ function validateProjectStructure(projectData) {
  * Import project data
  */
 function importProjectData(projectData) {
-    // Update current project
-    window.SongForge.app.currentProject = projectData;
-    
-    // Update project history
-    if (typeof saveToHistory === 'function') {
-        saveToHistory(projectData);
-    }
-    
-    // Update UI
-    if (typeof updateProjectUI === 'function') {
-        updateProjectUI();
-    }
-    
-    // Save to user's projects if logged in
-    if (window.SongForge.auth.isLoggedIn && typeof saveProjectForUser === 'function') {
-        saveProjectForUser(projectData);
-    }
-    
-    // Save to local storage
-    if (typeof saveToStorage === 'function') {
-        saveToStorage('current-project', projectData);
-    }
-    
-    // Switch to project interface
-    if (typeof showProjectInterface === 'function') {
-        showProjectInterface();
-    } else {
-        // Fallback to manual screen switch
+    try {
+        // Update current project
+        window.SongForge = window.SongForge || {};
+        window.SongForge.app = window.SongForge.app || {};
+        window.SongForge.app.currentProject = projectData;
+        
+        // Update lyrics if available
+        if (projectData.lyrics && window.SongForge.lyricsEnhanced) {
+            window.SongForge.lyricsEnhanced.sections = projectData.lyrics;
+        }
+        
+        // Switch to project interface
         hideAllScreens();
         const projectInterface = document.getElementById('projectInterface');
         if (projectInterface) {
             projectInterface.classList.remove('hidden');
-            window.SongForge.app.currentScreen = 'project';
+            
+            // Update project UI
+            const titleInput = document.getElementById('projectTitle');
+            if (titleInput) {
+                titleInput.value = projectData.title || 'Imported Project';
+            }
+            
+            const artistInput = document.getElementById('artistName');
+            if (artistInput) {
+                artistInput.value = projectData.artist || '';
+            }
+            
+            const genreInput = document.getElementById('genre');
+            if (genreInput) {
+                genreInput.value = projectData.genre || '';
+            }
+            
+            const bpmInput = document.getElementById('bpm');
+            if (bpmInput) {
+                bpmInput.value = projectData.bpm || '';
+            }
+            
+            const keyInput = document.getElementById('key');
+            if (keyInput) {
+                keyInput.value = projectData.key || '';
+            }
+            
+            const projectDate = document.getElementById('projectDate');
+            if (projectDate) {
+                projectDate.textContent = projectData.createdDate || new Date().toLocaleDateString();
+            }
         }
+        
+        // Refresh icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+        
+        console.log('Project imported successfully:', projectData.title);
+        
+    } catch (error) {
+        console.error('Error importing project data:', error);
+        showNotification('Error setting up imported project', 'error');
     }
-    
-    // Update lyrics if available
-    if (projectData.lyrics && window.SongForge.lyricsEnhanced) {
-        window.SongForge.lyricsEnhanced.sections = projectData.lyrics;
-    }
-    
-    // Refresh icons
-    if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
-    }
+}
+
+/**
+ * Hide all screens utility
+ */
+function hideAllScreens() {
+    const screens = ['welcomeScreen', 'dashboardScreen', 'projectInterface', 'freestyleMode'];
+    screens.forEach(id => {
+        const screen = document.getElementById(id);
+        if (screen) screen.classList.add('hidden');
+    });
 }
 
 /**
@@ -242,8 +259,8 @@ function hideLoadingNotification() {
  * Enhanced export with better formatting
  */
 function exportProjectWithMetadata() {
-    if (!window.SongForge.app.currentProject) {
-        showSafeNotification('No project to export', 'error');
+    if (!window.SongForge || !window.SongForge.app || !window.SongForge.app.currentProject) {
+        showNotification('No project to export', 'error');
         return;
     }
     
@@ -254,7 +271,7 @@ function exportProjectWithMetadata() {
         ...project,
         exportInfo: {
             exportedAt: new Date().toISOString(),
-            exportedBy: window.SongForge.auth.currentUser?.username || 'Guest',
+            exportedBy: 'SongForge User',
             appVersion: '2.0',
             format: 'SongForge Project'
         }
@@ -263,34 +280,55 @@ function exportProjectWithMetadata() {
     const filename = (project.title || 'songforge-project').replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const jsonString = JSON.stringify(exportData, null, 2);
     
-    downloadFile(jsonString, `${filename}.json`, 'application/json');
-    showSafeNotification('Project exported successfully', 'success');
+    // Create download
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filename}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showNotification('Project exported successfully', 'success');
 }
 
 /**
- * Add import button to navigation
+ * Enhanced file drop zone functionality
  */
-function addImportToNavigation() {
-    // Add import option to user dropdown if it doesn't exist
-    const userDropdown = document.getElementById('userDropdown');
-    if (userDropdown && !userDropdown.querySelector('.import-project-nav')) {
-        const importButton = document.createElement('button');
-        importButton.className = 'import-project-nav w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors';
-        importButton.innerHTML = '<i data-lucide="upload" class="w-4 h-4 mr-2 inline"></i>Import Project';
-        importButton.addEventListener('click', triggerImport);
+function setupDropZone() {
+    // Add drop zone to dashboard
+    const dashboardScreen = document.getElementById('dashboardScreen');
+    if (dashboardScreen) {
+        dashboardScreen.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dashboardScreen.style.backgroundColor = 'rgba(30, 144, 255, 0.1)';
+        });
         
-        // Add before logout button or at the end
-        const logoutBtn = userDropdown.querySelector('#logoutBtn');
-        if (logoutBtn) {
-            userDropdown.insertBefore(importButton, logoutBtn);
-        } else {
-            userDropdown.querySelector('.py-1').appendChild(importButton);
-        }
+        dashboardScreen.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            if (!dashboardScreen.contains(e.relatedTarget)) {
+                dashboardScreen.style.backgroundColor = '';
+            }
+        });
         
-        // Update icons
-        if (typeof lucide !== 'undefined') {
-            lucide.createIcons();
-        }
+        dashboardScreen.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dashboardScreen.style.backgroundColor = '';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.includes('json') || file.name.endsWith('.json')) {
+                    // Create fake event for the handler
+                    const fakeEvent = { target: { files: [file], value: '' } };
+                    handleEnhancedProjectImport(fakeEvent);
+                } else {
+                    showNotification('Please drop a JSON project file', 'error');
+                }
+            }
+        });
     }
 }
 
@@ -298,18 +336,29 @@ function addImportToNavigation() {
  * Initialize enhanced import system
  */
 function initializeEnhancedImport() {
-    setupEnhancedImportListeners();
-    addImportToNavigation();
-    
-    // Add keyboard shortcut for import (Ctrl+O)
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
-            e.preventDefault();
-            triggerImport();
-        }
-    });
-    
-    console.log('Enhanced import system initialized');
+    try {
+        setupEnhancedImportListeners();
+        setupDropZone();
+        
+        // Add keyboard shortcut for import (Ctrl+O)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+                e.preventDefault();
+                triggerImport();
+            }
+            
+            // Add keyboard shortcut for export (Ctrl+E)
+            if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+                e.preventDefault();
+                exportProjectWithMetadata();
+            }
+        });
+        
+        console.log('Enhanced import system initialized');
+        
+    } catch (error) {
+        console.error('Error initializing enhanced import:', error);
+    }
 }
 
 // Auto-initialize when this script loads
@@ -324,4 +373,4 @@ window.triggerImport = triggerImport;
 window.exportProjectWithMetadata = exportProjectWithMetadata;
 window.importProjectData = importProjectData;
 
-console.log('Import fix loaded');
+console.log('Import fix loaded (safe version)');
