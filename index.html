@@ -49,8 +49,32 @@
     <link rel="stylesheet" href="css/components.css">
     
     <!-- Tailwind Config -->
-      
-<script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#1E90FF',
+                        'primary-dark': '#1C86EE',
+                        secondary: '#3AAFFF',
+                        'secondary-dark': '#3AA5F5',
+                        'light-bg': '#F9F9F9',
+                        'light-panel': '#FFFFFF',
+                        'light-text': '#1F1F1F',
+                        'light-text-muted': '#6E6E6E',
+                        'dark-bg': '#0D0D0D',
+                        'dark-panel': '#1A1A1A',
+                        'dark-text': '#FFFFFF',
+                        'dark-text-muted': '#B0B0B0'
+                    }
+                }
+            }
+        }
+    </script>
 </head>
 <body class="h-full bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text font-sans transition-all duration-300">
     <!-- Navigation -->
@@ -158,10 +182,12 @@
                         </div>
                         <h3 class="font-semibold">Import Project</h3>
                     </div>
-                    <p class="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">Continue previous work</p>
+                    <p class="text-sm text-light-text-muted dark:text-dark-text-muted mb-4">Continue previous work from exported JSON file</p>
                     <button id="importProjectBtn" class="w-full bg-secondary hover:bg-secondary-dark text-white py-2 rounded-lg transition-colors">
-                        Import File
+                        <i data-lucide="file-plus" class="w-4 h-4 mr-2 inline"></i>
+                        Import JSON File
                     </button>
+                    <input type="file" id="projectImportInput" accept=".json" class="hidden">
                 </div>
                 
                 <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800">
@@ -303,4 +329,263 @@
                 </button>
                 <button class="tab-btn px-4 py-2 font-medium text-light-text-muted dark:text-dark-text-muted hover:text-primary transition-colors whitespace-nowrap" data-tab="release">
                     <i data-lucide="rocket" class="w-4 h-4 mr-2 inline"></i>
-           
+                    Release
+                </button>
+            </div>
+
+            <!-- Tab Content will be inserted here by JavaScript -->
+            <div id="tabContent">
+                <!-- Content dynamically loaded -->
+            </div>
+        </div>
+
+        <!-- Freestyle Mode -->
+        <div id="freestyleMode" class="hidden">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold mb-4">Freestyle Practice Mode</h2>
+                    <p class="text-light-text-muted dark:text-dark-text-muted">Practice your freestyle skills with random word prompts</p>
+                </div>
+                
+                <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 border border-gray-200 dark:border-gray-800 mb-6">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold mb-2 md:mb-0">YouTube Beat</h3>
+                        <button id="backToDashboard" class="text-primary hover:text-primary-dark">
+                            <i data-lucide="arrow-left" class="w-4 h-4 mr-2 inline"></i>
+                            Back to Dashboard
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <input id="freestyleYoutubeUrl" type="url" placeholder="Paste YouTube beat URL here..." 
+                               class="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel text-base">
+                        <button id="loadFreestyleBeat" class="mt-2 bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-lg transition-colors">
+                            Load Beat
+                        </button>
+                    </div>
+                    
+                    <div id="freestyleVideoContainer" class="hidden mb-4">
+                        <!-- YouTube iframe will be inserted here -->
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Word Change Frequency</label>
+                            <select id="wordFrequency" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel">
+                                <option value="15">Every 15 seconds</option>
+                                <option value="30" selected>Every 30 seconds</option>
+                                <option value="45">Every 45 seconds</option>
+                                <option value="60">Every minute</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Word Category</label>
+                            <select id="wordCategory" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-light-panel dark:bg-dark-panel">
+                                <option value="general">General</option>
+                                <option value="emotions">Emotions</option>
+                                <option value="objects">Objects</option>
+                                <option value="actions">Actions</option>
+                                <option value="colors">Colors</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <button id="startFreestyle" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors mr-4">
+                            Start Freestyle
+                        </button>
+                        <button id="stopFreestyle" class="hidden bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg text-lg font-semibold transition-colors">
+                            Stop
+                        </button>
+                    </div>
+                    
+                    <div id="currentWordDisplay" class="text-center">
+                        <div class="text-6xl font-bold text-primary mb-2" id="currentWord">Ready?</div>
+                        <div class="text-sm text-light-text-muted dark:text-dark-text-muted" id="nextWordTimer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div id="modalContent" class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 max-w-md w-full max-h-96 overflow-y-auto custom-scrollbar">
+            <!-- Modal content will be dynamically inserted -->
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loadingSpinner" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+        <div class="bg-light-panel dark:bg-dark-panel rounded-xl p-6 flex items-center space-x-3">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+            <span>Processing...</span>
+        </div>
+    </div>
+
+    <!-- File Input for Import -->
+    <input type="file" id="importInput" accept=".json" class="hidden">
+
+    <!-- JavaScript Files -->
+    <script src="js/utils.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/beats.js"></script>
+    <script src="js/lyrics.js"></script>
+    <script src="js/artwork-ai.js"></script>
+    <script src="js/freestyle.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/import-fix.js"></script>
+    
+    <script>
+        // Initialize Lucide icons and start app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, starting SongForge...');
+            
+            // Initialize Lucide icons immediately
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+                console.log('Lucide icons initialized');
+            }
+            
+            // Initialize theme system
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+            
+            // Initialize app after a short delay to ensure all scripts load
+            setTimeout(() => {
+                try {
+                    console.log('Checking for initialization functions...');
+                    
+                    // Try to initialize with available functions
+                    if (typeof initializeApp === 'function') {
+                        console.log('Found initializeApp function');
+                        initializeApp();
+                    } else if (typeof initializeEnhancedApp === 'function') {
+                        console.log('Found initializeEnhancedApp function');
+                        initializeEnhancedApp();
+                    } else {
+                        console.log('No main init function found, using basic setup');
+                        setupBasicApp();
+                    }
+                    
+                } catch (error) {
+                    console.error('App initialization error:', error);
+                    setupBasicApp();
+                }
+            }, 200);
+        });
+        
+        // Basic app setup fallback
+        function setupBasicApp() {
+            console.log('Setting up basic app...');
+            
+            // Show welcome screen
+            const welcomeScreen = document.getElementById('welcomeScreen');
+            if (welcomeScreen) {
+                welcomeScreen.classList.remove('hidden');
+            }
+            
+            // Setup basic navigation
+            const startBtn = document.getElementById('startBtn');
+            if (startBtn) {
+                startBtn.addEventListener('click', () => {
+                    alert('App is loading... Please refresh the page if this persists.');
+                });
+            }
+            
+            // Theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+            
+            function toggleTheme() {
+                document.documentElement.classList.toggle('dark');
+            }
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+            if (mobileThemeToggle) {
+                mobileThemeToggle.addEventListener('click', toggleTheme);
+            }
+            
+            // Mobile menu
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+            
+            if (mobileMenuBtn && mobileMenu) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+            
+            console.log('Basic app setup complete');
+        }
+        
+        // Modal functions
+        function showModal(title, content) {
+            const overlay = document.getElementById('modalOverlay');
+            const modalContent = document.getElementById('modalContent');
+            
+            if (overlay && modalContent) {
+                modalContent.innerHTML = `
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold">${title}</h2>
+                        <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div>${content}</div>
+                `;
+                
+                overlay.classList.remove('hidden');
+                
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+        }
+        
+        function closeModal() {
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm ${
+                type === 'error' ? 'bg-red-500 text-white' :
+                type === 'success' ? 'bg-green-500 text-white' :
+                type === 'warning' ? 'bg-yellow-500 text-black' :
+                'bg-blue-500 text-white'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+        
+        // Make functions globally available
+        window.showModal = showModal;
+        window.closeModal = closeModal;
+        window.showNotification = showNotification;
+        
+        console.log('SongForge index.html loaded');
+    </script>
+</body>
+</html>
