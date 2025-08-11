@@ -2,6 +2,34 @@
 // ENHANCED LYRICS SYSTEM FOR SONGFORGE
 // =========================================
 
+// LYRICS INITIALIZATION FIX
+// Ensure SongForge global exists
+if (!window.SongForge) {
+    window.SongForge = {};
+}
+
+// Safely initialize lyrics enhanced
+if (!window.SongForge.lyricsEnhanced) {
+    window.SongForge.lyricsEnhanced = {
+        sections: [],
+        currentSection: null,
+        rhymeSettings: {
+            density: 5,
+            layeredMetaphors: 3,
+            puns: 2,
+            internalRhymes: 4,
+            doubleEntendres: 2,
+            assonance: 3,
+            consonance: 3,
+            radioFriendly: true
+        },
+        combinedText: '',
+        importedProjects: []
+    };
+}
+
+console.log('Lyrics enhanced system safely initialized');
+
 // Enhanced lyrics state
 window.SongForge = window.SongForge || {};
 window.SongForge.lyrics = {
